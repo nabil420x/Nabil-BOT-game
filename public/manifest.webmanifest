@@ -1,0 +1,32 @@
+{
+  "id": "/",
+  "name": "NaBil-BOT: Cyber Protocol",
+  "short_name": "NaBil-BOT",
+  "description": "Fast-paced 60fps cyberpunk arena action shooter across 100 sectors.",
+  "theme_color": "#05060a",
+  "background_color": "#05060a",
+  "display": "standalone",
+  "orientation": "landscape",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

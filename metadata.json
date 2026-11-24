@@ -1,0 +1,6 @@
+{
+  "name": "Neon Vanguard: Cyber Protocol",
+  "description": "A high-octane retro-futuristic cyberpunk arena action game with 60fps simulation, procedural audio synth, diverse enemy archetypes with attack telegraphs, and hitstop combat feel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

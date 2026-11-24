@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@layer base {
+  html,
+  body,
+  #root {
+    width: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .font-mono-numbers {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Cyber scanlines and grid effects */
+.cyber-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+}
+
+.glow-cyan {
+  filter: drop-shadow(0 0 10px rgba(0, 243, 255, 0.6));
+}
+
+.glow-magenta {
+  filter: drop-shadow(0 0 10px rgba(255, 0, 85, 0.6));
+}
+
+.glow-amber {
+  filter: drop-shadow(0 0 10px rgba(255, 180, 0, 0.6));
+}
+
+/* Combo Counter Pulse & Scale Animation on successful hit (compositor-only transform/opacity) */
+@keyframes combo-pulse {
+  0% {
+    transform: scale(0.94);
+    opacity: 0.9;
+  }
+  35% {
+    transform: scale(1.16);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-combo-pulse {
+  animation: combo-pulse 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  will-change: transform;
+}
