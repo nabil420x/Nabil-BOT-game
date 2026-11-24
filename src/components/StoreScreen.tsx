@@ -101,6 +101,12 @@ function getWeaponIcon(id: WeaponType): string {
     case 'prism_splitter': return '🔮';
     case 'void_rail': return '🌌';
     case 'celestial_eclipse': return '☄️';
+    case 'ricochet_disc': return '🪚';
+    case 'pulsar_matrix': return '🟣';
+    case 'quantum_swarm': return '🎯';
+    case 'crimson_reaper': return '🩸';
+    case 'astral_horizon': return '🌠';
+    case 'genesis_nova': return '✴️';
     default: return '🔫';
   }
 }
@@ -110,19 +116,25 @@ function getCraftIcon(cId: CraftId): string {
     case 'vanguard_alpha': return '✈️';
     case 'cyber_falcon': return '🦅';
     case 'phantom_shadow': return '🛸';
+    case 'mirage_viper': return '🌪️';
     case 'titan_dread': return '🛡️';
+    case 'colossus_bastion': return '🏰';
     case 'solar_phoenix': return '🔥';
+    case 'frost_valkyrie': return '❄️';
     case 'aegis_celestial': return '⚡';
     case 'nebula_harbinger': return '🌌';
+    case 'eclipse_phantom': return '🌒';
     case 'astral_valkyrie': return '👑';
     case 'zenith_emperor': return '⚜️';
     case 'tempest_raptor': return '🌩️';
     case 'seraph_nova': return '🌟';
+    case 'kronos_sovereign': return '⌛';
     default: return '🚀';
   }
 }
 
 type StoreTabId = 'weapons' | 'crafts' | 'companions' | 'trails' | 'tech_boosts' | 'diamond_vault';
+type CatalogFilter = 'all' | 'owned' | 'affordable';
 
 interface StoreScreenProps {
   coins: number;
@@ -144,6 +156,7 @@ interface StoreScreenProps {
   onGearUpdated?: () => void;
   onWalletSync?: (newCoins: number, newDiamonds: number) => void;
   onUnlockBundleWeapons?: (weapons: WeaponType[]) => void;
+  onUnlockBundleCrafts?: (crafts: CraftId[]) => void;
   onBackToHome: () => void;
   onNavigateMap?: () => void;
   onNavigateProfile?: () => void;
@@ -151,19 +164,9 @@ interface StoreScreenProps {
   onDeployGame: () => void;
 }
 
-const DEFAULT_UNLOCKED_CRAFTS: Record<CraftId, boolean> = {
-  vanguard_alpha: true,
-  phantom_shadow: false,
-  titan_dread: false,
-  solar_phoenix: false,
-  aegis_celestial: false,
-  astral_valkyrie: false,
-  cyber_falcon: false,
-  nebula_harbinger: false,
-  zenith_emperor: false,
-  tempest_raptor: false,
-  seraph_nova: false,
-};
+const DEFAULT_UNLOCKED_CRAFTS: Record<CraftId, boolean> = Object.fromEntries(
+  CRAFT_ORDER.map((cId) => [cId, cId === 'vanguard_alpha'])
+) as Record<CraftId, boolean>;
 
 export const StoreScreen: React.FC<StoreScreenProps> = ({
   coins,
@@ -181,6 +184,7 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
   onGearUpdated,
   onWalletSync,
   onUnlockBundleWeapons,
+  onUnlockBundleCrafts,
   onBackToHome,
   onNavigateMap,
   onNavigateProfile,
@@ -188,6 +192,7 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
   onDeployGame,
 }) => {
   const [activeTab, setActiveTab] = useState<StoreTabId>('weapons');
+  const [catalogFilter, setCatalogFilter] = useState<CatalogFilter>('all');
   const [selectedWeaponId, setSelectedWeaponId] = useState<WeaponType>(
     isWeaponDiamondExclusive(activeWeapon) ? 'pulse' : activeWeapon
   );
@@ -219,6 +224,89 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
   const coinCraftIds = CRAFT_ORDER.filter((cId) => !isCraftDiamondExclusive(cId));
   const unlockedCompanionCount = COMPANION_ORDER.filter((id) => storeGear.unlockedCompanions[id]).length;
   const unlockedTrailCount = TRAIL_ORDER.filter((id) => storeGear.unlockedTrails[id]).length;
+  const ownedWeaponsCount = WEAPON_ORDER.filter((wId) => unlockedWeapons[wId]).length;
+  const ownedCraftsCount = CRAFT_ORDER.filter((cId) => unlockedCrafts[cId]).length;
+  const ownedModulesCount = MODULE_ORDER.filter((mId) => storeGear.unlockedModules[mId]).length;
+  const relicKeys = Object.keys(DIAMOND_RELIC_COSTS) as (keyof DiamondRelics)[];
+  const ownedRelicsCount = relicKeys.filter((k) => diamondRelics[k]).length;
+  const ownedCollectionCount =
+    ownedWeaponsCount +
+    ownedCraftsCount +
+    unlockedCompanionCount +
+    unlockedTrailCount +
+    ownedModulesCount +
+    ownedRelicsCount;
+  const totalCatalogCount =
+    WEAPON_ORDER.length +
+    CRAFT_ORDER.length +
+    COMPANION_ORDER.length +
+    TRAIL_ORDER.length +
+    MODULE_ORDER.length +
+    relicKeys.length;
+  const collectionPercent = Math.round((ownedCollectionCount / totalCatalogCount) * 100);
+
+  const matchesWeaponFilter = (wId: WeaponType): boolean => {
+    if (catalogFilter === 'all') return true;
+    if (catalogFilter === 'owned') return Boolean(unlockedWeapons[wId]);
+    const wep = WEAPONS[wId];
+    return (
+      !unlockedWeapons[wId] &&
+      ((wep.price > 0 && coins >= wep.price) || ((wep.diamondCost ?? 0) > 0 && diamonds >= (wep.diamondCost ?? 0)))
+    );
+  };
+
+  const matchesCraftFilter = (cId: CraftId): boolean => {
+    if (catalogFilter === 'all') return true;
+    if (catalogFilter === 'owned') return Boolean(unlockedCrafts[cId]);
+    const craft = CRAFTS[cId];
+    return (
+      !unlockedCrafts[cId] &&
+      ((craft.price > 0 && coins >= craft.price) ||
+        ((craft.diamondCost ?? 0) > 0 && diamonds >= (craft.diamondCost ?? 0)))
+    );
+  };
+
+  const matchesCompanionFilter = (id: CompanionDroneId): boolean => {
+    if (catalogFilter === 'all') return true;
+    if (catalogFilter === 'owned') return Boolean(storeGear.unlockedCompanions[id]);
+    const drone = COMPANION_DRONES[id];
+    return (
+      !storeGear.unlockedCompanions[id] &&
+      ((!isCompanionDiamondExclusive(id) && drone.price > 0 && coins >= drone.price) ||
+        ((drone.diamondCost ?? 0) > 0 && diamonds >= (drone.diamondCost ?? 0)))
+    );
+  };
+
+  const matchesTrailFilter = (id: ThrusterTrailId): boolean => {
+    if (catalogFilter === 'all') return true;
+    if (catalogFilter === 'owned') return Boolean(storeGear.unlockedTrails[id]);
+    const trail = THRUSTER_TRAILS[id];
+    return (
+      !storeGear.unlockedTrails[id] &&
+      ((!isTrailDiamondExclusive(id) && trail.price > 0 && coins >= trail.price) ||
+        ((trail.diamondCost ?? 0) > 0 && diamonds >= (trail.diamondCost ?? 0)))
+    );
+  };
+
+  const renderFilterBar = () => (
+    <div className="flex items-center gap-1.5 flex-wrap" data-testid="store-filter-bar">
+      {(['all', 'owned', 'affordable'] as CatalogFilter[]).map((mode) => (
+        <button
+          key={mode}
+          type="button"
+          data-testid={`store-filter-${mode}`}
+          onClick={() => setCatalogFilter(mode)}
+          className={`px-2.5 py-1 rounded-lg border text-[10px] font-mono font-bold uppercase tracking-wider cursor-pointer transition-all ${
+            catalogFilter === mode
+              ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200'
+              : 'bg-slate-900/70 border-slate-800 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          {mode === 'all' ? 'All' : mode === 'owned' ? 'Owned' : 'Affordable'}
+        </button>
+      ))}
+    </div>
+  );
 
   // Weapon Details
   const selectedWeapon = WEAPONS[selectedWeaponId];
@@ -504,6 +592,9 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
     if (res.unlockedWeaponsList.length > 0) {
       onUnlockBundleWeapons?.(res.unlockedWeaponsList);
     }
+    if (res.unlockedCraftsList.length > 0) {
+      onUnlockBundleCrafts?.(res.unlockedCraftsList);
+    }
     onWalletSync?.(res.remainingCoins, res.remainingDiamonds ?? loadDiamonds());
     onGearUpdated?.();
     showNotice(`📦 CLAIMED ${res.bundle?.name.toUpperCase()}! GEAR & BOOSTERS ACTIVATED!`);
@@ -650,8 +741,29 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
         </div>
       )}
 
+      {/* Collection Mastery Progress Bar */}
+      <div
+        data-testid="store-collection-progress"
+        className="w-full max-w-6xl mx-auto mt-3 px-4 py-2.5 rounded-xl bg-slate-900/75 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-300">
+            ARMORY COLLECTION: {ownedCollectionCount}/{totalCatalogCount} UNLOCKED ({collectionPercent}%)
+          </span>
+          <span className="hidden md:inline text-[11px] font-mono text-slate-400">
+            · {ownedWeaponsCount}/{WEAPON_ORDER.length} Weapons · {ownedCraftsCount}/{CRAFT_ORDER.length} Crafts · {unlockedCompanionCount}/{COMPANION_ORDER.length} Drones · {unlockedTrailCount}/{TRAIL_ORDER.length} Trails
+          </span>
+        </div>
+        <div className="w-full sm:w-56 h-2 rounded-full bg-slate-950 border border-slate-800 overflow-hidden shrink-0">
+          <div
+            className="h-full bg-gradient-to-r from-cyan-400 via-amber-400 to-fuchsia-400 rounded-full transition-all duration-300"
+            style={{ width: `${Math.min(100, collectionPercent)}%` }}
+          />
+        </div>
+      </div>
+
       {/* Store Department Navigation Tabs (6 Departments) */}
-      <div className="w-full max-w-6xl mx-auto mt-4 grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
+      <div className="w-full max-w-6xl mx-auto mt-3 grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
         <button
           data-testid="store-tab-weapons"
           onClick={() => setActiveTab('weapons')}
@@ -727,7 +839,7 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
           }`}
         >
           <Gem className="w-3.5 h-3.5 text-cyan-300 shrink-0" />
-          <span>VAULT (16)</span>
+          <span>VAULT (22)</span>
         </button>
       </div>
 
@@ -737,16 +849,20 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
       {activeTab === 'weapons' && (
         <div className="w-full max-w-6xl mx-auto mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
           <div className="lg:col-span-8 flex flex-col gap-3">
-            {/* God-Tier Weapons */}
-            <div className="flex items-center gap-2 pt-1 pb-1">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span className="text-xs font-black uppercase tracking-widest text-amber-300 font-mono">
-                ★ GOD-TIER PROTOCOLS (ULTIMATE POWER · SUPREME ARMS)
-              </span>
+            <div className="flex items-center justify-between gap-2 flex-wrap pb-1">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span className="text-xs font-black uppercase tracking-widest text-amber-300 font-mono">
+                  ★ GOD-TIER PROTOCOLS (ULTIMATE POWER · SUPREME ARMS)
+                </span>
+              </div>
+              {renderFilterBar()}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-              {WEAPON_ORDER.filter((wId) => WEAPONS[wId].tier === 'godtier' && !isWeaponDiamondExclusive(wId)).map((wId) => {
+              {WEAPON_ORDER.filter(
+                (wId) => WEAPONS[wId].tier === 'godtier' && !isWeaponDiamondExclusive(wId) && matchesWeaponFilter(wId)
+              ).map((wId) => {
                 const wep = WEAPONS[wId];
                 const unlocked = unlockedWeapons[wId];
                 const equipped = activeWeapon === wId;
@@ -812,7 +928,9 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {WEAPON_ORDER.filter((wId) => WEAPONS[wId].tier === 'monster' && !isWeaponDiamondExclusive(wId)).map((wId) => {
+              {WEAPON_ORDER.filter(
+                (wId) => WEAPONS[wId].tier === 'monster' && !isWeaponDiamondExclusive(wId) && matchesWeaponFilter(wId)
+              ).map((wId) => {
                 const wep = WEAPONS[wId];
                 const unlocked = unlockedWeapons[wId];
                 const equipped = activeWeapon === wId;
@@ -879,7 +997,10 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               {WEAPON_ORDER.filter(
-                (wId) => (WEAPONS[wId].tier === 'starter' || WEAPONS[wId].tier === 'advanced') && !isWeaponDiamondExclusive(wId)
+                (wId) =>
+                  (WEAPONS[wId].tier === 'starter' || WEAPONS[wId].tier === 'advanced') &&
+                  !isWeaponDiamondExclusive(wId) &&
+                  matchesWeaponFilter(wId)
               ).map((wId) => {
                 const wep = WEAPONS[wId];
                 const unlocked = unlockedWeapons[wId];
@@ -929,6 +1050,19 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
                 );
               })}
             </div>
+
+            {coinWeaponIds.filter(matchesWeaponFilter).length === 0 && (
+              <div className="p-6 rounded-xl bg-slate-950/80 border border-slate-800 text-center text-xs font-mono text-slate-400">
+                <p className="mb-2">No weapons match the current filter with your current balance.</p>
+                <button
+                  type="button"
+                  onClick={() => setCatalogFilter('all')}
+                  className="px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-400 text-cyan-200 font-bold uppercase cursor-pointer"
+                >
+                  Show All Weapons
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Right Column: Weapon Inspector Panel */}
@@ -1142,18 +1276,21 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
       {activeTab === 'crafts' && (
         <div className="w-full max-w-6xl mx-auto mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
           <div className="lg:col-span-8 flex flex-col gap-4">
-            <div className="flex items-center justify-between pb-1">
+            <div className="flex items-center justify-between gap-2 flex-wrap pb-1">
               <span className="text-xs font-black uppercase tracking-widest text-amber-300 font-mono flex items-center gap-2">
                 <Rocket className="w-4 h-4 text-amber-400" />
                 TACTICAL COMBAT AIRFRAMES · SPEED &amp; DEFENSE SPECIALIZATION
               </span>
-              <span className="text-xs text-slate-400 font-mono font-mono-numbers">
-                {coinCraftIds.filter((cId) => unlockedCrafts[cId]).length}/{coinCraftIds.length} UNLOCKED
-              </span>
+              <div className="flex items-center gap-3 flex-wrap">
+                {renderFilterBar()}
+                <span className="text-xs text-slate-400 font-mono font-mono-numbers">
+                  {coinCraftIds.filter((cId) => unlockedCrafts[cId]).length}/{coinCraftIds.length} UNLOCKED
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {coinCraftIds.map((cId) => {
+              {coinCraftIds.filter(matchesCraftFilter).map((cId) => {
                 const craft = getCraftDef(cId);
                 const unlocked = unlockedCrafts[cId];
                 const isEquipped = activeCraft === cId;
@@ -1162,6 +1299,7 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
                 return (
                   <div
                     key={cId}
+                    data-testid={`craft-card-${cId}`}
                     onClick={() => setSelectedCraftId(cId)}
                     className={`p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between ${
                       isSelected
@@ -1248,6 +1386,19 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
                 );
               })}
             </div>
+
+            {coinCraftIds.filter(matchesCraftFilter).length === 0 && (
+              <div className="p-6 rounded-xl bg-slate-950/80 border border-slate-800 text-center text-xs font-mono text-slate-400">
+                <p className="mb-2">No airframes match this filter yet.</p>
+                <button
+                  type="button"
+                  onClick={() => setCatalogFilter('all')}
+                  className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-400 text-amber-200 font-bold uppercase cursor-pointer"
+                >
+                  Show All Airframes
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Right Column: Craft Inspector Panel */}
@@ -1490,18 +1641,21 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
       {activeTab === 'companions' && (
         <div className="w-full max-w-6xl mx-auto mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
           <div className="lg:col-span-8 flex flex-col gap-4">
-            <div className="flex items-center justify-between pb-1">
+            <div className="flex items-center justify-between gap-2 flex-wrap pb-1">
               <span className="text-xs font-black uppercase tracking-widest text-emerald-300 font-mono flex items-center gap-2">
                 <Bot className="w-4 h-4 text-emerald-400" />
                 AUTONOMOUS WINGMAN DRONES · ORBIT, TARGET &amp; SUPPORT YOU LIVE IN COMBAT
               </span>
-              <span className="text-xs text-slate-400 font-mono">
-                {unlockedCompanionCount}/{COMPANION_ORDER.length} OWNED
-              </span>
+              <div className="flex items-center gap-3 flex-wrap">
+                {renderFilterBar()}
+                <span className="text-xs text-slate-400 font-mono">
+                  {unlockedCompanionCount}/{COMPANION_ORDER.length} OWNED
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {COMPANION_ORDER.map((id) => {
+              {COMPANION_ORDER.filter(matchesCompanionFilter).map((id) => {
                 const drone = COMPANION_DRONES[id];
                 const unlocked = storeGear.unlockedCompanions[id];
                 const equipped = storeGear.activeCompanion === id;
@@ -1572,6 +1726,19 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
                 );
               })}
             </div>
+
+            {COMPANION_ORDER.filter(matchesCompanionFilter).length === 0 && (
+              <div className="p-6 rounded-xl bg-slate-950/80 border border-slate-800 text-center text-xs font-mono text-slate-400">
+                <p className="mb-2">No companion drones match this filter yet.</p>
+                <button
+                  type="button"
+                  onClick={() => setCatalogFilter('all')}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-400 text-emerald-200 font-bold uppercase cursor-pointer"
+                >
+                  Show All Drones
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Right Column: Companion Inspector */}
@@ -1749,18 +1916,21 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
       {activeTab === 'trails' && (
         <div className="w-full max-w-6xl mx-auto mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
           <div className="lg:col-span-8 flex flex-col gap-4">
-            <div className="flex items-center justify-between pb-1">
+            <div className="flex items-center justify-between gap-2 flex-wrap pb-1">
               <span className="text-xs font-black uppercase tracking-widest text-pink-300 font-mono flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-pink-400" />
                 NEON THRUSTER WAKES · VISUAL JET RIBBONS + FLIGHT PERFORMANCE TUNING
               </span>
-              <span className="text-xs text-slate-400 font-mono">
-                {unlockedTrailCount}/{TRAIL_ORDER.length} OWNED
-              </span>
+              <div className="flex items-center gap-3 flex-wrap">
+                {renderFilterBar()}
+                <span className="text-xs text-slate-400 font-mono">
+                  {unlockedTrailCount}/{TRAIL_ORDER.length} OWNED
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {TRAIL_ORDER.map((id) => {
+              {TRAIL_ORDER.filter(matchesTrailFilter).map((id) => {
                 const trail = THRUSTER_TRAILS[id];
                 const unlocked = storeGear.unlockedTrails[id];
                 const equipped = storeGear.activeTrail === id;
@@ -1826,6 +1996,19 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
                 );
               })}
             </div>
+
+            {TRAIL_ORDER.filter(matchesTrailFilter).length === 0 && (
+              <div className="p-6 rounded-xl bg-slate-950/80 border border-slate-800 text-center text-xs font-mono text-slate-400">
+                <p className="mb-2">No thruster trails match this filter yet.</p>
+                <button
+                  type="button"
+                  onClick={() => setCatalogFilter('all')}
+                  className="px-3 py-1.5 rounded-lg bg-pink-500/20 border border-pink-400 text-pink-200 font-bold uppercase cursor-pointer"
+                >
+                  Show All Trails
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Right Column: Trail Inspector */}
@@ -2251,7 +2434,7 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
       )}
 
       {/* ======================================================== */}
-      {/* DEPARTMENT 6: DIAMOND VAULT (11 EXCLUSIVE PROTOCOLS)     */}
+      {/* DEPARTMENT 6: DIAMOND VAULT (22 EXCLUSIVE PROTOCOLS)     */}
       {/* ======================================================== */}
       {activeTab === 'diamond_vault' && (
         <div className="w-full max-w-6xl mx-auto mt-6 flex flex-col gap-6 pb-12">
@@ -2262,7 +2445,7 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
                 <h2 className="text-base sm:text-lg font-black tracking-wider text-white flex items-center gap-2 flex-wrap">
                   <span>CELESTIAL DIAMOND VAULT</span>
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 border border-cyan-400 text-cyan-300">
-                    16 EXCLUSIVE PROTOCOLS
+                    22 EXCLUSIVE PROTOCOLS
                   </span>
                 </h2>
                 <p className="text-xs text-slate-300 font-mono mt-0.5 leading-relaxed">
@@ -3029,6 +3212,350 @@ export const StoreScreen: React.FC<StoreScreenProps> = ({
                     }`}
                   >
                     💎 UNLOCK FOR {DIAMOND_RELIC_COSTS.void_overdrive} DIAMONDS
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 17. Kronos Sovereign X Craft */}
+            <div
+              data-testid="vault-card-kronos_sovereign"
+              className="p-5 rounded-2xl bg-slate-950 border border-yellow-400/40 hover:border-yellow-300 transition-all flex flex-col justify-between shadow-xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 px-3 py-1 bg-yellow-500/20 border-b border-l border-yellow-400/50 text-[10px] font-mono font-bold text-yellow-200 rounded-bl-xl">
+                SUPREME MYTHIC AIRFRAME
+              </div>
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-14 h-14 rounded-xl bg-yellow-500/10 border border-yellow-400/40 flex items-center justify-center text-3xl">
+                    ⌛
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white">{CRAFTS.kronos_sovereign.name}</h3>
+                    <div className="text-xs font-mono text-yellow-300">{CRAFTS.kronos_sovereign.model}</div>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-300 font-mono leading-relaxed mb-4">
+                  {CRAFTS.kronos_sovereign.description}
+                </p>
+                <div className="grid grid-cols-3 gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 text-[10px] font-mono mb-4 text-center">
+                  <div>
+                    <span className="text-slate-400 block text-[9px]">SHIELD BONUS</span>
+                    <span className="text-emerald-300 font-bold">+{CRAFTS.kronos_sovereign.shieldBonus}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[9px]">SPEED</span>
+                    <span className="text-cyan-300 font-bold">+38% Velocity</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[9px]">DAMAGE</span>
+                    <span className="text-amber-300 font-bold">1.68x AMP</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                {activeCraft === 'kronos_sovereign' ? (
+                  <div className="w-full py-3 bg-yellow-500/20 border border-yellow-400/60 rounded-xl text-center text-xs font-bold text-yellow-200 flex items-center justify-center gap-2">
+                    <Check className="w-4 h-4" /> ACTIVE AIRFRAME PILOTED
+                  </div>
+                ) : unlockedCrafts.kronos_sovereign ? (
+                  <button
+                    onClick={() => handleEquipCraftClick('kronos_sovereign')}
+                    className="w-full py-3 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-black text-xs uppercase rounded-xl cursor-pointer"
+                  >
+                    PILOT KRONOS SOVEREIGN
+                  </button>
+                ) : (
+                  <button
+                    onClick={() =>
+                      handleDiamondBuy(
+                        'craft',
+                        'kronos_sovereign',
+                        CRAFTS.kronos_sovereign.diamondCost ?? 420,
+                        CRAFTS.kronos_sovereign.name
+                      )
+                    }
+                    className={`w-full py-3 rounded-xl font-black text-xs uppercase cursor-pointer ${
+                      diamonds >= (CRAFTS.kronos_sovereign.diamondCost ?? 420)
+                        ? 'bg-gradient-to-r from-yellow-400 to-cyan-400 text-slate-950'
+                        : 'bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    💎 UNLOCK FOR {CRAFTS.kronos_sovereign.diamondCost ?? 420} DIAMONDS
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 18. Genesis Nova Arbiter Weapon */}
+            <div
+              data-testid="vault-card-genesis_nova"
+              className="p-5 rounded-2xl bg-slate-950 border border-pink-400/40 hover:border-pink-300 transition-all flex flex-col justify-between shadow-xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 px-3 py-1 bg-pink-500/20 border-b border-l border-pink-400/50 text-[10px] font-mono font-bold text-pink-200 rounded-bl-xl">
+                SUPREME VAULT WEAPON
+              </div>
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-14 h-14 rounded-xl bg-pink-500/10 border border-pink-400/40 flex items-center justify-center text-3xl">
+                    ✴️
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white">{WEAPONS.genesis_nova.name}</h3>
+                    <div className="text-xs font-mono text-pink-300">230 DMG · 4 HOMING GRAVITY CORES</div>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-300 font-mono leading-relaxed mb-4">
+                  {WEAPONS.genesis_nova.description}
+                </p>
+              </div>
+              <div>
+                {activeWeapon === 'genesis_nova' ? (
+                  <div className="w-full py-3 bg-pink-500/20 border border-pink-400/60 rounded-xl text-center text-xs font-bold text-pink-200 flex items-center justify-center gap-2">
+                    <Check className="w-4 h-4" /> ACTIVE WEAPON EQUIPPED
+                  </div>
+                ) : unlockedWeapons.genesis_nova ? (
+                  <button
+                    onClick={() => handleEquipWeaponClick('genesis_nova')}
+                    className="w-full py-3 bg-pink-400 hover:bg-pink-300 text-slate-950 font-black text-xs uppercase rounded-xl cursor-pointer"
+                  >
+                    EQUIP GENESIS NOVA ARBITER
+                  </button>
+                ) : (
+                  <button
+                    onClick={() =>
+                      handleDiamondBuy(
+                        'weapon',
+                        'genesis_nova',
+                        WEAPONS.genesis_nova.diamondCost ?? 400,
+                        WEAPONS.genesis_nova.name
+                      )
+                    }
+                    className={`w-full py-3 rounded-xl font-black text-xs uppercase cursor-pointer ${
+                      diamonds >= (WEAPONS.genesis_nova.diamondCost ?? 400)
+                        ? 'bg-gradient-to-r from-pink-400 via-fuchsia-400 to-cyan-400 text-slate-950'
+                        : 'bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    💎 UNLOCK FOR {WEAPONS.genesis_nova.diamondCost ?? 400} DIAMONDS
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 19. Celestial Phoenix Seraph Companion */}
+            <div
+              data-testid="vault-card-celestial_phoenix_bot"
+              className="p-5 rounded-2xl bg-slate-950 border border-amber-400/35 hover:border-amber-300 transition-all flex flex-col justify-between shadow-xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 px-3 py-1 bg-amber-500/20 border-b border-l border-amber-400/50 text-[10px] font-mono font-bold text-amber-200 rounded-bl-xl">
+                MYTHIC HOMING WINGMAN
+              </div>
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-14 h-14 rounded-xl bg-amber-500/10 border border-amber-400/40 flex items-center justify-center text-3xl">
+                    {COMPANION_DRONES.celestial_phoenix_bot.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white">
+                      {COMPANION_DRONES.celestial_phoenix_bot.name}
+                    </h3>
+                    <div className="text-xs font-mono text-amber-300">
+                      {COMPANION_DRONES.celestial_phoenix_bot.perkSummary}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-300 font-mono leading-relaxed mb-4">
+                  {COMPANION_DRONES.celestial_phoenix_bot.description}
+                </p>
+              </div>
+              <div>
+                {storeGear.activeCompanion === 'celestial_phoenix_bot' ? (
+                  <div className="w-full py-3 bg-amber-500/20 border border-amber-400/60 rounded-xl text-center text-xs font-bold text-amber-200 flex items-center justify-center gap-2">
+                    <Check className="w-4 h-4" /> ACTIVE WINGMAN DEPLOYED
+                  </div>
+                ) : storeGear.unlockedCompanions.celestial_phoenix_bot ? (
+                  <button
+                    onClick={() => handleEquipCompanionClick('celestial_phoenix_bot')}
+                    className="w-full py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase rounded-xl cursor-pointer"
+                  >
+                    DEPLOY PHOENIX SERAPH
+                  </button>
+                ) : (
+                  <button
+                    onClick={() =>
+                      handleDiamondBuy(
+                        'companion',
+                        'celestial_phoenix_bot',
+                        COMPANION_DRONES.celestial_phoenix_bot.diamondCost ?? 330,
+                        COMPANION_DRONES.celestial_phoenix_bot.name
+                      )
+                    }
+                    className={`w-full py-3 rounded-xl font-black text-xs uppercase cursor-pointer ${
+                      diamonds >= (COMPANION_DRONES.celestial_phoenix_bot.diamondCost ?? 330)
+                        ? 'bg-gradient-to-r from-amber-300 to-rose-400 text-slate-950'
+                        : 'bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    💎 UNLOCK FOR {COMPANION_DRONES.celestial_phoenix_bot.diamondCost ?? 330} DIAMONDS
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 20. Galactic Singularity Wake Trail */}
+            <div
+              data-testid="vault-card-trail_galactic_halo"
+              className="p-5 rounded-2xl bg-slate-950 border border-cyan-400/35 hover:border-cyan-300 transition-all flex flex-col justify-between shadow-xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 px-3 py-1 bg-cyan-500/20 border-b border-l border-cyan-400/50 text-[10px] font-mono font-bold text-cyan-200 rounded-bl-xl">
+                SUPREME NEBULA TRAIL
+              </div>
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-14 h-14 rounded-xl bg-cyan-500/10 border border-cyan-400/40 flex items-center justify-center text-3xl">
+                    {THRUSTER_TRAILS.trail_galactic_halo.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white">
+                      {THRUSTER_TRAILS.trail_galactic_halo.name}
+                    </h3>
+                    <div className="text-xs font-mono text-cyan-300">
+                      {THRUSTER_TRAILS.trail_galactic_halo.perkSummary}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-300 font-mono leading-relaxed mb-4">
+                  {THRUSTER_TRAILS.trail_galactic_halo.description}
+                </p>
+              </div>
+              <div>
+                {storeGear.activeTrail === 'trail_galactic_halo' ? (
+                  <div className="w-full py-3 bg-cyan-500/20 border border-cyan-400/60 rounded-xl text-center text-xs font-bold text-cyan-200 flex items-center justify-center gap-2">
+                    <Check className="w-4 h-4" /> ACTIVE GALACTIC WAKE
+                  </div>
+                ) : storeGear.unlockedTrails.trail_galactic_halo ? (
+                  <button
+                    onClick={() => handleEquipTrailClick('trail_galactic_halo')}
+                    className="w-full py-3 bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black text-xs uppercase rounded-xl cursor-pointer"
+                  >
+                    EQUIP GALACTIC WAKE
+                  </button>
+                ) : (
+                  <button
+                    onClick={() =>
+                      handleDiamondBuy(
+                        'trail',
+                        'trail_galactic_halo',
+                        THRUSTER_TRAILS.trail_galactic_halo.diamondCost ?? 210,
+                        THRUSTER_TRAILS.trail_galactic_halo.name
+                      )
+                    }
+                    className={`w-full py-3 rounded-xl font-black text-xs uppercase cursor-pointer ${
+                      diamonds >= (THRUSTER_TRAILS.trail_galactic_halo.diamondCost ?? 210)
+                        ? 'bg-gradient-to-r from-cyan-400 via-purple-400 to-amber-300 text-slate-950'
+                        : 'bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    💎 UNLOCK FOR {THRUSTER_TRAILS.trail_galactic_halo.diamondCost ?? 210} DIAMONDS
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 21. Relic: Astral Bastion Core */}
+            <div
+              data-testid="vault-card-astral_bastion"
+              className="p-5 rounded-2xl bg-slate-950 border border-sky-400/35 hover:border-sky-300 transition-all flex flex-col justify-between shadow-xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 px-3 py-1 bg-sky-500/20 border-b border-l border-sky-400/50 text-[10px] font-mono font-bold text-sky-300 rounded-bl-xl">
+                FORTRESS RELIC
+              </div>
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-14 h-14 rounded-xl bg-sky-500/10 border border-sky-400/40 flex items-center justify-center text-3xl">
+                    🏰
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white">Astral Bastion Core</h3>
+                    <div className="text-xs font-mono text-sky-300">+3 MAX HP · +50 MAX SHIELD FOREVER</div>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-300 font-mono leading-relaxed mb-4">
+                  Permanently expands every chassis with +3 extra Health Pips and +50 Max Shield capacity across every run.
+                </p>
+              </div>
+              <div>
+                {diamondRelics.astral_bastion ? (
+                  <div className="w-full py-3 bg-emerald-500/20 border border-emerald-400/60 rounded-xl text-center text-xs font-bold text-emerald-300 flex items-center justify-center gap-2">
+                    <Check className="w-4 h-4" /> RELIC PERMANENTLY ACTIVE
+                  </div>
+                ) : (
+                  <button
+                    onClick={() =>
+                      handleDiamondBuy(
+                        'relic',
+                        'astral_bastion',
+                        DIAMOND_RELIC_COSTS.astral_bastion,
+                        'Astral Bastion Core'
+                      )
+                    }
+                    className={`w-full py-3 rounded-xl font-black text-xs uppercase cursor-pointer ${
+                      diamonds >= DIAMOND_RELIC_COSTS.astral_bastion
+                        ? 'bg-gradient-to-r from-sky-400 to-indigo-400 text-slate-950'
+                        : 'bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    💎 UNLOCK FOR {DIAMOND_RELIC_COSTS.astral_bastion} DIAMONDS
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 22. Relic: Phoenix Surge Reactor */}
+            <div
+              data-testid="vault-card-phoenix_dynamo"
+              className="p-5 rounded-2xl bg-slate-950 border border-orange-400/35 hover:border-orange-300 transition-all flex flex-col justify-between shadow-xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 px-3 py-1 bg-orange-500/20 border-b border-l border-orange-400/50 text-[10px] font-mono font-bold text-orange-300 rounded-bl-xl">
+                SURGE RELIC
+              </div>
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-14 h-14 rounded-xl bg-orange-500/10 border border-orange-400/40 flex items-center justify-center text-3xl">
+                    🔥
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white">Phoenix Surge Reactor</h3>
+                    <div className="text-xs font-mono text-orange-300">-15% DASH COOLDOWN · +12% CRIT CHANCE</div>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-300 font-mono leading-relaxed mb-4">
+                  Permanently shaves 15% off Tactical Dash cooldowns while adding +12% Critical Strike probability to all weapons.
+                </p>
+              </div>
+              <div>
+                {diamondRelics.phoenix_dynamo ? (
+                  <div className="w-full py-3 bg-emerald-500/20 border border-emerald-400/60 rounded-xl text-center text-xs font-bold text-emerald-300 flex items-center justify-center gap-2">
+                    <Check className="w-4 h-4" /> RELIC PERMANENTLY ACTIVE
+                  </div>
+                ) : (
+                  <button
+                    onClick={() =>
+                      handleDiamondBuy(
+                        'relic',
+                        'phoenix_dynamo',
+                        DIAMOND_RELIC_COSTS.phoenix_dynamo,
+                        'Phoenix Surge Reactor'
+                      )
+                    }
+                    className={`w-full py-3 rounded-xl font-black text-xs uppercase cursor-pointer ${
+                      diamonds >= DIAMOND_RELIC_COSTS.phoenix_dynamo
+                        ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-slate-950'
+                        : 'bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed'
+                    }`}
+                  >
+                    💎 UNLOCK FOR {DIAMOND_RELIC_COSTS.phoenix_dynamo} DIAMONDS
                   </button>
                 )}
               </div>

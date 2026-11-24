@@ -177,19 +177,24 @@ test('wall charge cooldown, active cap eviction, and default persistence until d
   state = stepTacticalWallChargeState(c2.nextState, c2.nextState.cooldownTotal + 0.1);
   assert.equal(state.charges, 1);
 
-  const persistentWall = createTacticalWall({
-    id: 'stay_put',
+  const defaultWall = createTacticalWall({
+    id: 'auto_3s',
     ownerSlot: 'p1',
     color: '#00f3ff',
     x: 420,
     y: 360,
     angle: 0.4,
   });
-  const steppedLong = stepTacticalWalls([persistentWall], 60);
-  assert.equal(steppedLong.expiredIds.length, 0);
-  assert.equal(steppedLong.walls.length, 1);
-  assert.equal(steppedLong.walls[0].x, 420);
-  assert.equal(steppedLong.walls[0].y, 360);
+  assert.equal(defaultWall.ttl, 3);
+  const beforeExpiry = stepTacticalWalls([defaultWall], 2.9);
+  assert.equal(beforeExpiry.expiredIds.length, 0);
+  assert.equal(beforeExpiry.walls.length, 1);
+  assert.equal(beforeExpiry.walls[0].x, 420);
+  assert.equal(beforeExpiry.walls[0].y, 360);
+
+  const atExpiry = stepTacticalWalls(beforeExpiry.walls, 0.15);
+  assert.deepEqual(atExpiry.expiredIds, ['auto_3s']);
+  assert.equal(atExpiry.walls.length, 0);
 
   const list = [
     createTacticalWall({ id: '1', ownerSlot: 'p1', color: '#00f3ff', x: 100, y: 100, angle: 0, ttl: 10 }),

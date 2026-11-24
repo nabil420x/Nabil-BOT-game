@@ -6,7 +6,7 @@ export const TACTICAL_WALL_MAX_HP = 180;
 export const TACTICAL_WALL_HALF_WIDTH = 56;
 export const TACTICAL_WALL_HALF_THICKNESS = 14;
 export const TACTICAL_WALL_DEPLOY_DISTANCE = 64;
-export const TACTICAL_WALL_DURATION_SECONDS = 0; // 0 = stays anchored until destroyed by fire
+export const TACTICAL_WALL_DURATION_SECONDS = 3; // Auto-destroys after 3 seconds if not shattered earlier
 export const TACTICAL_WALL_MAX_CHARGES = 2;
 export const TACTICAL_WALL_RECHARGE_SECONDS = 6.0;
 export const TACTICAL_WALL_MAX_ACTIVE_PER_PLAYER = 4;

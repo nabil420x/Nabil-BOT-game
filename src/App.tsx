@@ -34,6 +34,7 @@ import { loadSupplyCrateState } from './game/supplyCrate';
 import { loadEndlessRecord } from './game/endless';
 import { loadBossRushRecord } from './game/bountyAndBossRush';
 import { loadActiveCraft, loadUnlockedCrafts } from './game/crafts';
+import { WEAPON_ORDER } from './game/weapons';
 import { loadDiamonds } from './game/diamonds';
 import { loadUserProfile } from './game/profile';
 import {
@@ -72,25 +73,9 @@ export default function App() {
   const [highestLevelUnlocked, setHighestLevelUnlocked] = useState(1);
   const [walletCoins, setWalletCoins] = useState(500);
   const [walletDiamonds, setWalletDiamonds] = useState<number>(() => loadDiamonds());
-  const [unlockedWeapons, setUnlockedWeapons] = useState<Record<WeaponType, boolean>>({
-    pulse: true,
-    scatter: false,
-    beam: false,
-    missile: false,
-    leviathan: false,
-    vortex: false,
-    inferno: false,
-    chrono_thunder: false,
-    supernova: false,
-    aegis_titan: false,
-    hyperion_astral: false,
-    plasma_scythe: false,
-    cryo_shatter: false,
-    omega_singularity: false,
-    prism_splitter: false,
-    void_rail: false,
-    celestial_eclipse: false,
-  });
+  const [unlockedWeapons, setUnlockedWeapons] = useState<Record<WeaponType, boolean>>(() =>
+    Object.fromEntries(WEAPON_ORDER.map((id) => [id, id === 'pulse'])) as Record<WeaponType, boolean>
+  );
   const [activeWeapon, setActiveWeapon] = useState<WeaponType>('pulse');
 
   // Flying Crafts and Daily Missions & Leaderboard State
@@ -754,6 +739,14 @@ export default function App() {
     }
   };
 
+  const handleUnlockBundleCrafts = (crafts: CraftId[]) => {
+    if (engineRef.current) {
+      engineRef.current.unlockStoreBundleCrafts(crafts);
+      setUnlockedCrafts({ ...engineRef.current.unlockedCrafts });
+      if (hudStats) setHudStats({ ...engineRef.current.stats });
+    }
+  };
+
   const handleTouchMoveVector = useCallback((dx: number, dy: number) => {
     engineRef.current?.setVirtualMoveVector(dx, dy);
   }, []);
@@ -859,6 +852,7 @@ export default function App() {
           onGearUpdated={handleStoreGearUpdated}
           onWalletSync={handleStoreWalletSync}
           onUnlockBundleWeapons={handleUnlockBundleWeapons}
+          onUnlockBundleCrafts={handleUnlockBundleCrafts}
           onBackToHome={handleBackToHome}
           onNavigateMap={handleOpenMap}
           onNavigateProfile={() => handleOpenProfile('profile')}

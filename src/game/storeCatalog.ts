@@ -1,6 +1,7 @@
 import type {
   CompanionDroneDef,
   CompanionDroneId,
+  CraftId,
   PermanentModuleDef,
   PermanentModuleId,
   PreRunBoosterId,
@@ -187,18 +188,101 @@ export const COMPANION_DRONES: Record<CompanionDroneId, CompanionDroneDef> = {
       'Apex Diamond Vault wingman firing rapid 58-damage void detonators (4x pierce + 55px blast) with +10 Shield repair cycles.',
     perkSummary: '58 DMG · 4x Pierce · 55px Blast · +10 Shield/3.5s',
   },
+  prism_weaver: {
+    id: 'prism_weaver',
+    name: 'Prism Weaver Drone',
+    role: 'Agile Crystal Striker',
+    tier: 'tactical',
+    price: 1650,
+    diamondCost: 66,
+    color: '#38bdf8',
+    secondaryColor: '#f472b6',
+    icon: '💎',
+    fireIntervalSec: 0.56,
+    boltDamage: 20,
+    pierce: 2,
+    magnetBonusPx: 60,
+    description:
+      'Sleek refractive crystal drone firing dual-pierce prism needles every 0.56s while pulling coins +60px closer.',
+    perkSummary: '20 DMG Prism · 2x Pierce · 0.56s Rate · +60px Magnet',
+  },
+  medic_nanobot: {
+    id: 'medic_nanobot',
+    name: 'Bio-Nanite Medic Drone',
+    role: 'Rapid Shield Sustainer',
+    tier: 'tactical',
+    price: 2950,
+    diamondCost: 115,
+    color: '#4ade80',
+    secondaryColor: '#2dd4bf',
+    icon: '💚',
+    fireIntervalSec: 0.64,
+    boltDamage: 22,
+    pierce: 2,
+    shieldPerCycle: 9,
+    shieldCycleSec: 3.5,
+    description:
+      'Medical repair escort unit delivering +9 Shield pulses every 3.5s while firing 2x-piercing bio-laser bolts.',
+    perkSummary: '+9 Shield every 3.5s · 22 DMG · 2x Pierce',
+  },
+  plasma_hydra_bot: {
+    id: 'plasma_hydra_bot',
+    name: 'Hydra Seeker Wingman',
+    role: 'Homing Explosive Escort',
+    tier: 'apex',
+    price: 6400,
+    diamondCost: 230,
+    color: '#f43f5e',
+    secondaryColor: '#fbbf24',
+    icon: '🚀',
+    fireIntervalSec: 0.50,
+    boltDamage: 36,
+    pierce: 2,
+    isHoming: true,
+    explosionRadius: 42,
+    description:
+      'High-tier tactical bomber drone launching smart-homing plasma rockets every 0.50s with 42px blast splashes.',
+    perkSummary: '36 DMG Homing Salvos · 42px Blast · 0.50s Rate',
+  },
+  celestial_phoenix_bot: {
+    id: 'celestial_phoenix_bot',
+    name: 'Celestial Phoenix Seraph',
+    role: 'Mythic Diamond Guardian',
+    tier: 'apex',
+    price: 0,
+    diamondCost: 330,
+    color: '#fde047',
+    secondaryColor: '#f472b6',
+    icon: '🦅',
+    fireIntervalSec: 0.38,
+    boltDamage: 66,
+    pierce: 5,
+    isHoming: true,
+    explosionRadius: 62,
+    shieldPerCycle: 14,
+    shieldCycleSec: 3.0,
+    magnetBonusPx: 140,
+    coinMultBonus: 0.18,
+    description:
+      'Mythic Diamond Vault solar wingman launching 66-damage homing novas every 0.38s, pulsing +14 Shield every 3s, and boosting coins +18%.',
+    perkSummary: '66 DMG Homing · 62px Blast · +14 Shield/3s · +18% Coins',
+  },
 };
 
 export const COMPANION_ORDER: CompanionDroneId[] = [
   'scout_spark',
+  'prism_weaver',
   'aegis_orbiter',
   'coin_collector_bot',
+  'medic_nanobot',
   'volt_arc_bot',
   'cryo_sentinel',
   'nova_harvester',
   'inferno_wyrm',
+  'plasma_hydra_bot',
   'archon_seraph',
   'void_reaper_drone',
+  'celestial_phoenix_bot',
 ];
 
 export const THRUSTER_TRAILS: Record<ThrusterTrailId, ThrusterTrailDef> = {
@@ -345,18 +429,86 @@ export const THRUSTER_TRAILS: Record<ThrusterTrailId, ThrusterTrailDef> = {
     perkSummary: '+10% Speed · +12% Cool · -12% Dash CD · +14/s Shield',
     description: 'Supreme prismatic star-wake engineered with diamond quantum condensers for unmatched agility, cooling, and shield regen.',
   },
+  trail_neon_magenta: {
+    id: 'trail_neon_magenta',
+    name: 'Neon Hyper-Magenta',
+    subtitle: 'Synthwave Sakura Jet',
+    price: 950,
+    diamondCost: 38,
+    colors: ['#ec4899', '#f472b6', '#38bdf8'],
+    icon: '💗',
+    speedBonus: 0.04,
+    coolingBonus: 0.04,
+    magnetBonusPx: 0,
+    dashCdReduction: 0.04,
+    shieldRechargeBonus: 0,
+    perkSummary: '+4% Speed · +4% Cooling · -4% Dash CD',
+    description: 'Sleek cyber-magenta and cyan jet wake giving smooth agility and crisp dash cadence at an accessible entry cost.',
+  },
+  trail_toxic_acid: {
+    id: 'trail_toxic_acid',
+    name: 'Bio-Venom Acid Plume',
+    subtitle: 'Radioactive Emerald Exhaust',
+    price: 1950,
+    diamondCost: 78,
+    colors: ['#4ade80', '#a3e635', '#10b981'],
+    icon: '☣️',
+    speedBonus: 0.05,
+    coolingBonus: 0.10,
+    magnetBonusPx: 45,
+    dashCdReduction: 0,
+    shieldRechargeBonus: 0,
+    perkSummary: '+10% Cooling · +5% Speed · +45px Magnet',
+    description: 'High-contrast acid-lime ion plumes that flush barrel heat 10% faster while drawing scrap +45px inward.',
+  },
+  trail_supernova_pulse: {
+    id: 'trail_supernova_pulse',
+    name: 'Supernova Ion Pulse',
+    subtitle: 'White-Hot Fusion Ribbon',
+    price: 3400,
+    diamondCost: 130,
+    colors: ['#f97316', '#fde047', '#ffffff'],
+    icon: '☄️',
+    speedBonus: 0.07,
+    coolingBonus: 0.12,
+    magnetBonusPx: 50,
+    dashCdReduction: 0.08,
+    shieldRechargeBonus: 8,
+    perkSummary: '+7% Speed · +12% Cool · -8% Dash CD · +8/s Shield',
+    description: 'Radiant coin-unlockable fusion wake blending scorching gold-white plasma with all-around combat tuning.',
+  },
+  trail_galactic_halo: {
+    id: 'trail_galactic_halo',
+    name: 'Galactic Singularity Wake',
+    subtitle: 'Supreme Diamond Vault FX',
+    price: 0,
+    diamondCost: 210,
+    colors: ['#22d3ee', '#c084fc', '#f472b6', '#fde047'],
+    icon: '🌌',
+    speedBonus: 0.12,
+    coolingBonus: 0.15,
+    magnetBonusPx: 110,
+    dashCdReduction: 0.14,
+    shieldRechargeBonus: 18,
+    perkSummary: '+12% Speed · +15% Cool · -14% Dash CD · +18/s Shield',
+    description: 'Flagship cosmic nebula exhaust harnessing micro-singularity thrust for peak velocity, +110px magnet, and rapid shield repair.',
+  },
 };
 
 export const TRAIL_ORDER: ThrusterTrailId[] = [
   'trail_standard',
+  'trail_neon_magenta',
   'trail_cyber_rainbow',
   'trail_crimson_afterburn',
   'trail_solar_flare',
+  'trail_toxic_acid',
   'trail_emerald_matrix',
   'trail_arctic_aurora',
   'trail_void_lightning',
+  'trail_supernova_pulse',
   'trail_celestial_gold',
   'trail_quantum_prism',
+  'trail_galactic_halo',
 ];
 
 export const PERMANENT_MODULES: Record<PermanentModuleId, PermanentModuleDef> = {
@@ -432,40 +584,98 @@ export const PERMANENT_MODULES: Record<PermanentModuleId, PermanentModuleDef> = 
     description:
       'Supercharges deflector cells with +45 Max Shield, +15/s recharge speed, and 22% faster shield recovery after taking damage.',
   },
+  thruster_turbo: {
+    id: 'thruster_turbo',
+    name: 'Hyper-Vector Thruster Core',
+    category: 'MOBILITY MODULE',
+    price: 2600,
+    diamondCost: 98,
+    color: '#2dd4bf',
+    icon: '🚀',
+    statLabel: '+8% Flight Speed · -12% Dash Cooldown',
+    description:
+      'Permanently upgrades maneuvering nozzles on every airframe for +8% flight velocity and 12% faster Tactical Dash resets.',
+  },
+  salvage_core: {
+    id: 'salvage_core',
+    name: 'Apex Salvage Synthesizer',
+    category: 'ECONOMY MODULE',
+    price: 3400,
+    diamondCost: 128,
+    color: '#fde047',
+    icon: '🪙',
+    statLabel: '+75px Magnet · +20% Coin Yield',
+    description:
+      'Stacks with Quantum Harvester Coil to expand pickup attraction +75px further and boost all Cyber Coin drops by +20%.',
+  },
+  hyper_barrel: {
+    id: 'hyper_barrel',
+    name: 'Hyper-Chamber Accelerator',
+    category: 'WEAPON TECH',
+    price: 4200,
+    diamondCost: 158,
+    color: '#fb7185',
+    icon: '🔥',
+    statLabel: '+12% All Weapon DMG · +8% Fire Rate',
+    description:
+      'Permanently chambers overclocked plasma injectors across every weapon, delivering +12% base damage and +8% cyclic fire rate.',
+  },
+  finisher_dynamo: {
+    id: 'finisher_dynamo',
+    name: 'Nova Dynamo Reactor',
+    category: 'COMBO TECH',
+    price: 4800,
+    diamondCost: 180,
+    color: '#c084fc',
+    icon: '💥',
+    statLabel: '+35% Finisher Charge · +12% Cooling',
+    description:
+      'Accelerates Combo Nova Finisher buildup by +35% per strike while cooling barrels +12% faster in sustained firefights.',
+  },
 };
 
 export const MODULE_ORDER: PermanentModuleId[] = [
   'magnet_overdrive',
+  'thruster_turbo',
   'kinetic_plating',
   'thermal_vent',
+  'salvage_core',
   'crit_amplifier',
   'vampiric_siphon',
+  'hyper_barrel',
   'shield_capacitor',
+  'finisher_dynamo',
 ];
 
 export const BOOSTER_SHOP_PRICES: Record<PreRunBoosterId, number> = {
   shield_overcharge: 550,
+  turbo_thrusters: 600,
   coin_rush: 650,
   weapon_overclock: 750,
   finisher_charged: 750,
+  vampiric_surge: 820,
   bounty_radar_vip: 850,
   headstart_augment: 980,
 };
 
 export const BOOSTER_DIAMOND_PRICES: Record<PreRunBoosterId, number> = {
   shield_overcharge: 22,
+  turbo_thrusters: 24,
   coin_rush: 26,
   weapon_overclock: 30,
   finisher_charged: 30,
+  vampiric_surge: 32,
   bounty_radar_vip: 34,
   headstart_augment: 38,
 };
 
 export const BOOSTER_ORDER: PreRunBoosterId[] = [
   'shield_overcharge',
+  'turbo_thrusters',
   'coin_rush',
   'weapon_overclock',
   'finisher_charged',
+  'vampiric_surge',
   'bounty_radar_vip',
   'headstart_augment',
 ];
@@ -570,32 +780,103 @@ export const STORE_BUNDLES: StoreBundleDef[] = [
       'Grants +3,500 Cyber Coins + 2 Boosters + 250 XP',
     ],
   },
+  {
+    id: 'bundle_cyber_ace',
+    name: 'Mirage Ace Interceptor Bundle',
+    tagline: 'Mirage Viper-X9 Craft + Ricochet Sawblade + Neon Magenta Wake',
+    badge: 'SAVE 1,750+ COINS',
+    priceCoins: 3900,
+    priceDiamonds: 145,
+    originalValueLabel: '5,650🪙 Value',
+    color: '#2dd4bf',
+    icon: '🚀',
+    unlockWeapons: ['ricochet_disc'],
+    unlockCrafts: ['mirage_viper'],
+    unlockTrails: ['trail_neon_magenta'],
+    grantBoosters: ['turbo_thrusters'],
+    grantMasteryXp: 160,
+    highlights: [
+      'Unlocks Mirage Viper-X9 Airframe (2,450🪙)',
+      'Unlocks Ricochet Sawblade Weapon (1,650🪙)',
+      'Unlocks Neon Hyper-Magenta Trail + Turbo Booster + 160 XP',
+    ],
+  },
+  {
+    id: 'bundle_crimson_warlord',
+    name: 'Crimson Reaper Warlord Kit',
+    tagline: 'Crimson Bio-Scythe + Bio-Nanite Medic Drone + Thruster Core Module',
+    badge: 'ASSAULT ARSENAL',
+    priceCoins: 7200,
+    priceDiamonds: 255,
+    originalValueLabel: '10,770🪙 Value',
+    color: '#fb7185',
+    icon: '🌙',
+    unlockWeapons: ['crimson_reaper'],
+    unlockCompanions: ['medic_nanobot'],
+    unlockModules: ['thruster_turbo'],
+    grantBoosters: ['vampiric_surge'],
+    grantMasteryXp: 220,
+    highlights: [
+      'Unlocks Crimson Bio-Scythe Weapon (4,400🪙)',
+      'Unlocks Bio-Nanite Medic Drone (2,950🪙)',
+      'Installs Hyper-Vector Thruster Module (2,600🪙) + Crit Booster',
+    ],
+  },
+  {
+    id: 'bundle_eternal_sovereign',
+    name: 'Kronos Eternal Vault Chest',
+    tagline: 'Kronos Sovereign X Craft + Phoenix Wingman + Galactic Halo + 5,000 Coins',
+    badge: 'MYTHIC VAULT',
+    priceDiamonds: 495,
+    originalValueLabel: '960💎 + 6,730🪙 Value',
+    color: '#fde047',
+    icon: '👑',
+    unlockCrafts: ['kronos_sovereign'],
+    unlockCompanions: ['celestial_phoenix_bot'],
+    unlockTrails: ['trail_galactic_halo'],
+    grantCoins: 5000,
+    grantBoosters: ['headstart_augment', 'finisher_charged'],
+    grantMasteryXp: 350,
+    highlights: [
+      'Unlocks Kronos Sovereign X Vault Craft (420💎 Value)',
+      'Deploys Celestial Phoenix Seraph + Galactic Wake (540💎 Value)',
+      'Grants +5,000 Coins + 2 Boosters + 350 Mastery XP',
+    ],
+  },
 ];
 
 export function createInitialStoreGearState(): StoreGearState {
   return {
     unlockedCompanions: {
       scout_spark: false,
+      prism_weaver: false,
       aegis_orbiter: false,
       coin_collector_bot: false,
+      medic_nanobot: false,
       volt_arc_bot: false,
       cryo_sentinel: false,
       nova_harvester: false,
       inferno_wyrm: false,
+      plasma_hydra_bot: false,
       archon_seraph: false,
       void_reaper_drone: false,
+      celestial_phoenix_bot: false,
     },
     activeCompanion: null,
     unlockedTrails: {
       trail_standard: true,
+      trail_neon_magenta: false,
       trail_cyber_rainbow: false,
       trail_crimson_afterburn: false,
       trail_solar_flare: false,
+      trail_toxic_acid: false,
       trail_emerald_matrix: false,
       trail_arctic_aurora: false,
       trail_void_lightning: false,
+      trail_supernova_pulse: false,
       trail_celestial_gold: false,
       trail_quantum_prism: false,
+      trail_galactic_halo: false,
     },
     activeTrail: 'trail_standard',
     unlockedModules: {
@@ -605,6 +886,10 @@ export function createInitialStoreGearState(): StoreGearState {
       vampiric_siphon: false,
       crit_amplifier: false,
       shield_capacitor: false,
+      thruster_turbo: false,
+      salvage_core: false,
+      hyper_barrel: false,
+      finisher_dynamo: false,
     },
     purchasedBundles: {},
   };
@@ -1076,7 +1361,7 @@ export function computeStoreGearModifiers(
   let speedBonus = activeTrail.speedBonus;
   let coolingMultiplier = 1 + activeTrail.coolingBonus;
   let heatPerShotMultiplier = 1.0;
-  const dashCdMultiplier = Math.max(0.75, 1 - activeTrail.dashCdReduction);
+  let dashCdFactor = 1 - activeTrail.dashCdReduction;
   let magnetBonusPx = activeTrail.magnetBonusPx + (activeCompanion?.magnetBonusPx ?? 0);
   let coinMultiplier = 1 + (activeCompanion?.coinMultBonus ?? 0);
   let fireRateMultiplier = 1.0;
@@ -1110,6 +1395,22 @@ export function computeStoreGearModifiers(
     shieldRechargeBonus += 15;
     shieldDelayMultiplier *= 0.78;
   }
+  if (state.unlockedModules.thruster_turbo) {
+    speedBonus += 0.08;
+    dashCdFactor *= 0.88;
+  }
+  if (state.unlockedModules.salvage_core) {
+    magnetBonusPx += 75;
+    coinMultiplier += 0.20;
+  }
+  if (state.unlockedModules.hyper_barrel) {
+    damageMultiplier += 0.12;
+    fireRateMultiplier += 0.08;
+  }
+  if (state.unlockedModules.finisher_dynamo) {
+    finisherChargeMultiplier += 0.35;
+    coolingMultiplier += 0.12;
+  }
 
   if (relics?.solar_overcharge) {
     fireRateMultiplier += 0.15;
@@ -1122,6 +1423,16 @@ export function computeStoreGearModifiers(
     damageMultiplier += 0.12;
     shieldRechargeBonus += 10;
   }
+  if (relics?.astral_bastion) {
+    maxHpBonus += 3;
+    maxShieldBonus += 50;
+  }
+  if (relics?.phoenix_dynamo) {
+    dashCdFactor *= 0.85;
+    critChanceBonus += 0.12;
+  }
+
+  const dashCdMultiplier = Math.max(0.50, dashCdFactor);
 
   return {
     maxHpBonus,
@@ -1278,6 +1589,7 @@ export function applyBundleRewardsToState(
   nextCoins: number;
   updatedGearState: StoreGearState;
   unlockedWeaponsList: WeaponType[];
+  unlockedCraftsList: CraftId[];
 } {
   let nextCoins = params.currentCoins;
   if (bundle.grantCoins) {
@@ -1311,6 +1623,7 @@ export function applyBundleRewardsToState(
     nextCoins,
     updatedGearState: nextGear,
     unlockedWeaponsList: bundle.unlockWeapons || [],
+    unlockedCraftsList: bundle.unlockCrafts || [],
   };
 }
 
@@ -1331,6 +1644,7 @@ export function purchaseStoreBundle(
   remainingDiamonds?: number;
   updatedGearState: StoreGearState;
   unlockedWeaponsList: WeaponType[];
+  unlockedCraftsList: CraftId[];
   armedBoosters: PreRunBoosterId[];
 } {
   const bundle = STORE_BUNDLES.find((b) => b.id === bundleId);
@@ -1341,6 +1655,7 @@ export function purchaseStoreBundle(
       remainingCoins: params.currentCoins,
       updatedGearState: params.gearState,
       unlockedWeaponsList: [],
+      unlockedCraftsList: [],
       armedBoosters: loadSupplyCrateState().armedBoosters,
     };
   }
@@ -1352,6 +1667,7 @@ export function purchaseStoreBundle(
       remainingCoins: params.currentCoins,
       updatedGearState: params.gearState,
       unlockedWeaponsList: [],
+      unlockedCraftsList: [],
       armedBoosters: loadSupplyCrateState().armedBoosters,
     };
   }
@@ -1372,6 +1688,7 @@ export function purchaseStoreBundle(
         remainingCoins: params.currentCoins,
         updatedGearState: params.gearState,
         unlockedWeaponsList: [],
+        unlockedCraftsList: [],
         armedBoosters: loadSupplyCrateState().armedBoosters,
       };
     }
@@ -1384,6 +1701,7 @@ export function purchaseStoreBundle(
           remainingDiamonds: params.currentDiamonds,
           updatedGearState: params.gearState,
           unlockedWeaponsList: [],
+          unlockedCraftsList: [],
           armedBoosters: loadSupplyCrateState().armedBoosters,
         };
       }
@@ -1398,6 +1716,7 @@ export function purchaseStoreBundle(
           remainingDiamonds: dRes.remaining,
           updatedGearState: params.gearState,
           unlockedWeaponsList: [],
+          unlockedCraftsList: [],
           armedBoosters: loadSupplyCrateState().armedBoosters,
         };
       }
@@ -1411,6 +1730,7 @@ export function purchaseStoreBundle(
         remainingCoins: params.currentCoins,
         updatedGearState: params.gearState,
         unlockedWeaponsList: [],
+        unlockedCraftsList: [],
         armedBoosters: loadSupplyCrateState().armedBoosters,
       };
     }
@@ -1460,6 +1780,7 @@ export function purchaseStoreBundle(
     remainingDiamonds,
     updatedGearState: nextGear,
     unlockedWeaponsList: applied.unlockedWeaponsList,
+    unlockedCraftsList: applied.unlockedCraftsList,
     armedBoosters: nextBoosters,
   };
 }

@@ -7,6 +7,8 @@ export interface DiamondRelics {
   solar_overcharge: boolean; // +15% Fire Rate & +20% Finisher Charge Rate
   midas_treasury: boolean; // +35% Bonus Cyber Coins from all combat drops
   void_overdrive: boolean; // +12% All Weapon & Companion Damage + +10/s Shield Recharge
+  astral_bastion: boolean; // +3 Max HP & +50 Max Shield permanently
+  phoenix_dynamo: boolean; // -15% Dash Cooldown & +12% Critical Strike Chance permanently
 }
 
 export const DIAMOND_RELIC_COSTS: Record<keyof DiamondRelics, number> = {
@@ -15,6 +17,8 @@ export const DIAMOND_RELIC_COSTS: Record<keyof DiamondRelics, number> = {
   solar_overcharge: 240,
   midas_treasury: 185,
   void_overdrive: 225,
+  astral_bastion: 260,
+  phoenix_dynamo: 290,
 };
 
 export function loadDiamonds(): number {
@@ -67,6 +71,8 @@ export function loadDiamondRelics(): DiamondRelics {
     solar_overcharge: false,
     midas_treasury: false,
     void_overdrive: false,
+    astral_bastion: false,
+    phoenix_dynamo: false,
   };
   if (typeof window === 'undefined') return defaults;
   try {
@@ -79,6 +85,8 @@ export function loadDiamondRelics(): DiamondRelics {
       solar_overcharge: !!parsed.solar_overcharge,
       midas_treasury: !!parsed.midas_treasury,
       void_overdrive: !!parsed.void_overdrive,
+      astral_bastion: !!parsed.astral_bastion,
+      phoenix_dynamo: !!parsed.phoenix_dynamo,
     };
   } catch {
     return defaults;

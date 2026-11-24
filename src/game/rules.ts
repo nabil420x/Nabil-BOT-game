@@ -1016,6 +1016,12 @@ export const WEAPON_PRICES: Record<WeaponType, number> = {
   prism_splitter: 2800,
   void_rail: 5500,
   celestial_eclipse: 0, // Exclusive Diamond Vault Weapon
+  ricochet_disc: 1650,
+  pulsar_matrix: 2350,
+  quantum_swarm: 3600,
+  crimson_reaper: 4400,
+  astral_horizon: 11200,
+  genesis_nova: 0, // Exclusive Diamond Vault Weapon
 };
 
 export function getWeaponPrice(type: WeaponType): number {
@@ -1786,10 +1792,18 @@ export function mapWeaponToDamageCategory(
     case 'hyperion_astral':
     case 'omega_singularity':
     case 'celestial_eclipse':
+    case 'astral_horizon':
+    case 'genesis_nova':
       return 'cosmic';
     case 'plasma_scythe':
     case 'prism_splitter':
+    case 'ricochet_disc':
+    case 'pulsar_matrix':
       return 'scatter';
+    case 'quantum_swarm':
+      return 'explosive';
+    case 'crimson_reaper':
+      return 'fire';
     case 'cryo_shatter':
     case 'void_rail':
       return 'kinetic';
@@ -2759,6 +2773,9 @@ export function getWeaponFireShakeTrauma(
   tier: WeaponTier = 'starter'
 ): number {
   switch (weaponId) {
+    case 'genesis_nova':
+    case 'astral_horizon':
+      return 0.34;
     case 'omega_singularity':
       return 0.34;
     case 'celestial_eclipse':
@@ -2769,8 +2786,12 @@ export function getWeaponFireShakeTrauma(
       return 0.30;
     case 'void_rail':
       return 0.24;
+    case 'crimson_reaper':
+      return 0.22;
     case 'vortex':
       return 0.28;
+    case 'quantum_swarm':
+      return 0.16;
     case 'aegis_titan':
       return 0.25;
     case 'leviathan':
@@ -2781,6 +2802,8 @@ export function getWeaponFireShakeTrauma(
       return 0.20;
     case 'plasma_scythe':
     case 'prism_splitter':
+    case 'ricochet_disc':
+    case 'pulsar_matrix':
       return 0.13;
     case 'beam':
       return 0.14;

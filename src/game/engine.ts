@@ -168,6 +168,7 @@ import { LEVELS, getLevelDef, LevelDef } from './levels';
 import { recordBattleResult } from './profile';
 import {
   CRAFTS,
+  CRAFT_ORDER,
   getCraftDef,
   loadActiveCraft,
   saveActiveCraft,
@@ -407,19 +408,9 @@ export class GameEngine {
 
   public activeCraft: CraftId = 'vanguard_alpha';
   public activeCraftSkin: CraftSkinId = 'default';
-  public unlockedCrafts: Record<CraftId, boolean> = {
-    vanguard_alpha: true,
-    phantom_shadow: false,
-    titan_dread: false,
-    solar_phoenix: false,
-    aegis_celestial: false,
-    astral_valkyrie: false,
-    cyber_falcon: false,
-    nebula_harbinger: false,
-    zenith_emperor: false,
-    tempest_raptor: false,
-    seraph_nova: false,
-  };
+  public unlockedCrafts: Record<CraftId, boolean> = Object.fromEntries(
+    CRAFT_ORDER.map((id) => [id, id === 'vanguard_alpha'])
+  ) as Record<CraftId, boolean>;
 
   public stats: PlayerStats = {
     maxHp: 10,
@@ -454,38 +445,12 @@ export class GameEngine {
     activeWeapon: 'pulse',
     activeCraft: 'vanguard_alpha',
     activeCraftSkin: 'default',
-    unlockedCrafts: {
-      vanguard_alpha: true,
-      cyber_falcon: false,
-      phantom_shadow: false,
-      titan_dread: false,
-      solar_phoenix: false,
-      nebula_harbinger: false,
-      aegis_celestial: false,
-      astral_valkyrie: false,
-      zenith_emperor: false,
-      tempest_raptor: false,
-      seraph_nova: false,
-    },
-    unlockedWeapons: {
-      pulse: true,
-      scatter: false,
-      beam: false,
-      missile: false,
-      plasma_scythe: false,
-      leviathan: false,
-      vortex: false,
-      cryo_shatter: false,
-      inferno: false,
-      chrono_thunder: false,
-      supernova: false,
-      aegis_titan: false,
-      hyperion_astral: false,
-      omega_singularity: false,
-      prism_splitter: false,
-      void_rail: false,
-      celestial_eclipse: false,
-    },
+    unlockedCrafts: Object.fromEntries(
+      CRAFT_ORDER.map((id) => [id, id === 'vanguard_alpha'])
+    ) as Record<CraftId, boolean>,
+    unlockedWeapons: Object.fromEntries(
+      WEAPON_ORDER.map((id) => [id, id === 'pulse'])
+    ) as Record<WeaponType, boolean>,
     goldenCoresDestroyed: 0,
     isBossRush: false,
     bossRushStage: 1,
@@ -511,11 +476,13 @@ export class GameEngine {
   public applyCraftModifiers() {
     const craft = getCraftDef(this.activeCraft);
     const gearMods = this.cachedStoreGearMods;
+    const boosterSpeedBonus = this.activeBoosters.includes('turbo_thrusters') ? 0.15 : 0;
+    const boosterDashMult = this.activeBoosters.includes('turbo_thrusters') ? 0.8 : 1.0;
     this.stats.activeCraft = this.activeCraft;
     this.stats.unlockedCrafts = { ...this.unlockedCrafts };
     this.stats.maxHp = 12 + gearMods.maxHpBonus + this.stats.upgrades.maxHealthLvl;
     this.stats.currentHp = Math.min(this.stats.maxHp, Math.max(this.stats.currentHp, this.stats.maxHp));
-    this.stats.speed = Math.round(360 * (craft.speedMultiplier + gearMods.speedBonus));
+    this.stats.speed = Math.round(360 * (craft.speedMultiplier + gearMods.speedBonus + boosterSpeedBonus));
     const boosterShieldBonus = this.activeBoosters.includes('shield_overcharge') ? 60 : 0;
     this.stats.maxShield =
       150 +
@@ -527,7 +494,7 @@ export class GameEngine {
     this.stats.shieldRechargeRate = 40 + craft.statModifiers.shieldRechargeBonus + gearMods.shieldRechargeBonus;
     this.stats.shieldRechargeDelay = Math.max(0.55, Number((1.4 * gearMods.shieldDelayMultiplier).toFixed(2)));
     this.stats.dashCooldown = computeDashCooldown(
-      craft.dashCooldownMultiplier * gearMods.dashCdMultiplier,
+      craft.dashCooldownMultiplier * gearMods.dashCdMultiplier * boosterDashMult,
       this.stats.upgrades.dashLvl
     );
   }
@@ -579,6 +546,7 @@ export class GameEngine {
     secondaryColor: string;
   }> = [];
   private isResolvingFinisher = false;
+  private finisherChargeProgress = 0;
   private nextId = 1;
 
   // Particles pool
@@ -772,25 +740,9 @@ export class GameEngine {
       if (savedWeapons) {
         try {
           const parsed = JSON.parse(savedWeapons);
-          this.stats.unlockedWeapons = {
-            pulse: true,
-            scatter: !!parsed.scatter,
-            beam: !!parsed.beam,
-            missile: !!parsed.missile,
-            plasma_scythe: !!parsed.plasma_scythe,
-            leviathan: !!parsed.leviathan,
-            vortex: !!parsed.vortex,
-            cryo_shatter: !!parsed.cryo_shatter,
-            inferno: !!parsed.inferno,
-            chrono_thunder: !!parsed.chrono_thunder,
-            supernova: !!parsed.supernova,
-            aegis_titan: !!parsed.aegis_titan,
-            hyperion_astral: !!parsed.hyperion_astral,
-            omega_singularity: !!parsed.omega_singularity,
-            prism_splitter: !!parsed.prism_splitter,
-            void_rail: !!parsed.void_rail,
-            celestial_eclipse: !!parsed.celestial_eclipse,
-          };
+          this.stats.unlockedWeapons = Object.fromEntries(
+            WEAPON_ORDER.map((wId) => [wId, wId === 'pulse' ? true : !!parsed[wId]])
+          ) as Record<WeaponType, boolean>;
         } catch {
           // ignore parse error
         }
@@ -1125,10 +1077,14 @@ export class GameEngine {
       if (key === '2') this.switchWeapon('scatter');
       if (key === '3') this.switchWeapon('beam');
       if (key === '4') this.switchWeapon('missile');
+      if (key === 't') this.switchWeapon('ricochet_disc');
       if (key === 'z') this.switchWeapon('plasma_scythe');
+      if (key === 'b') this.switchWeapon('pulsar_matrix');
       if (key === '5') this.switchWeapon('leviathan');
       if (key === '6') this.switchWeapon('vortex');
+      if (key === 'u') this.switchWeapon('quantum_swarm');
       if (key === 'c') this.switchWeapon('cryo_shatter');
+      if (key === 'h') this.switchWeapon('crimson_reaper');
       if (key === '7') this.switchWeapon('inferno');
       if (key === '8') this.switchWeapon('chrono_thunder');
       if (key === '9') this.switchWeapon('supernova');
@@ -1137,7 +1093,9 @@ export class GameEngine {
       if (key === 'v') this.switchWeapon('omega_singularity');
       if (key === 'f') this.switchWeapon('prism_splitter');
       if (key === 'g') this.switchWeapon('void_rail');
+      if (key === 'n') this.switchWeapon('astral_horizon');
       if (key === 'y') this.switchWeapon('celestial_eclipse');
+      if (key === '=') this.switchWeapon('genesis_nova');
     }
 
     // Dash shortcut Shift / Q / L (in regular gameplay and Cyber Duel)
@@ -1398,6 +1356,21 @@ export class GameEngine {
     this.refreshStoreGear();
   }
 
+  public unlockStoreBundleCrafts(craftsToUnlock: CraftId[]): void {
+    let changed = false;
+    for (const cId of craftsToUnlock) {
+      if (!this.unlockedCrafts[cId]) {
+        this.unlockedCrafts[cId] = true;
+        changed = true;
+      }
+    }
+    if (changed) {
+      saveUnlockedCrafts(this.unlockedCrafts);
+      this.syncCraftAchievement();
+    }
+    this.refreshStoreGear();
+  }
+
   private trackGlobalEvent(type: GlobalEventObjectiveType, value: number = 1) {
     if (this.isDuelMode) return;
     try {
@@ -1623,6 +1596,7 @@ export class GameEngine {
     this.stats.maxCombo = 0;
     this.stats.comboFinisherCharge = 0;
     this.stats.comboFinisherReady = false;
+    this.finisherChargeProgress = 0;
     this.stats.kills = 0;
     this.stats.scrap = 0;
     this.stats.level = this.currentLevel;
@@ -3902,6 +3876,7 @@ export class GameEngine {
               isEnemy: false,
               pierceRemaining: compDef.pierce,
               trail: [],
+              isHoming: compDef.isHoming,
               explosionRadius: compDef.explosionRadius,
               cryoSlowDuration: compDef.cryoSlowSec,
               weaponType: this.stats.activeWeapon,
@@ -4155,10 +4130,11 @@ export class GameEngine {
     this.player.scaleX += (1 - this.player.scaleX) * 12 * dt;
     this.player.scaleY += (1 - this.player.scaleY) * 12 * dt;
 
-    // 3. Shield Regeneration (uses cached relics to avoid 60Hz localStorage JSON parse)
+    // 3. Shield Regeneration (uses cached relics + boosters to avoid 60Hz localStorage JSON parse)
     const passiveRelicRegen =
       (this.cachedDiamondRelics.quantum_nanite ? 15 : 0) +
-      (this.cachedDiamondRelics.void_overdrive ? 10 : 0);
+      (this.cachedDiamondRelics.void_overdrive ? 10 : 0) +
+      (this.activeBoosters.includes('vampiric_surge') ? 10 : 0);
     if (passiveRelicRegen > 0 && this.stats.currentShield < this.stats.maxShield) {
       // Continuous passive quantum/void shield auto-repair
       this.stats.currentShield = Math.min(
@@ -4186,6 +4162,7 @@ export class GameEngine {
         this.stats.comboMultiplier = 1.0;
         this.stats.comboFinisherCharge = 0;
         this.stats.comboFinisherReady = false;
+        this.finisherChargeProgress = 0;
       }
     }
 
@@ -4440,8 +4417,27 @@ export class GameEngine {
       }
     }
     if (this.duelTacticalWalls.length > 0) {
-      const steppedWalls = stepTacticalWalls(this.duelTacticalWalls, dt);
-      this.duelTacticalWalls = steppedWalls.walls;
+      const prevWalls = this.duelTacticalWalls;
+      const steppedWalls = stepTacticalWalls(prevWalls, dt);
+      if (isOnline) {
+        // Keep online walls alive until authoritative server duel:wall_destroyed arrives, clamping visual ttl
+        this.duelTacticalWalls = prevWalls.map((w) => ({
+          ...w,
+          ttl: w.maxTtl > 0 ? Math.max(0.01, w.ttl - dt) : w.ttl,
+          hitFlash: Math.max(0, (w.hitFlash || 0) - dt * 4.5),
+        }));
+      } else {
+        this.duelTacticalWalls = steppedWalls.walls;
+        if (steppedWalls.expiredIds.length > 0) {
+          const expiredSet = new Set(steppedWalls.expiredIds);
+          for (const w of prevWalls) {
+            if (expiredSet.has(w.id)) {
+              this.shatterTacticalWallFx(w);
+            }
+          }
+          this.emitDuelSyncSnapshot();
+        }
+      }
     }
 
     // 3. Projectiles, Enemies, Pickups
@@ -4882,7 +4878,24 @@ export class GameEngine {
       const vx = Math.cos(angle) * weapon.speed;
       const vy = Math.sin(angle) * weapon.speed;
       const dmg = Math.round(weapon.damage * dmgMultiplier);
-      const radius = weapon.id === 'supernova' ? 16 : weapon.id === 'vortex' ? 12 : weapon.id === 'leviathan' ? 14 : 6;
+      const radius =
+        weapon.id === 'supernova'
+          ? 16
+          : weapon.id === 'omega_singularity' || weapon.id === 'genesis_nova' || weapon.id === 'leviathan'
+          ? 14
+          : weapon.id === 'celestial_eclipse'
+          ? 13
+          : weapon.id === 'vortex'
+          ? 12
+          : weapon.id === 'astral_horizon'
+          ? 11
+          : weapon.id === 'crimson_reaper'
+          ? 10
+          : weapon.id === 'ricochet_disc'
+          ? 8
+          : weapon.id === 'quantum_swarm'
+          ? 7
+          : 6;
 
       if (this.duelTacticalWalls.length > 0) {
         const muzzleWallHit = findProjectileTacticalWallHit({
@@ -4945,6 +4958,7 @@ export class GameEngine {
         weaponType: weapon.id,
         damageCategory: mapWeaponToDamageCategory(weapon.id, Boolean(weapon.explosionRadius)),
         ownerSlot: slot,
+        bouncesRemaining: weapon.id === 'ricochet_disc' ? 2 : 0,
       });
 
       if (isOnline && this.duelClient) {
@@ -5210,7 +5224,7 @@ export class GameEngine {
         radius:
           weapon.id === 'supernova'
             ? 16
-            : weapon.id === 'omega_singularity'
+            : weapon.id === 'omega_singularity' || weapon.id === 'genesis_nova'
             ? 14
             : weapon.id === 'celestial_eclipse'
             ? 13
@@ -5218,21 +5232,25 @@ export class GameEngine {
             ? 12
             : weapon.id === 'leviathan'
             ? 14
-            : weapon.id === 'void_rail'
+            : weapon.id === 'astral_horizon'
+            ? 11
+            : weapon.id === 'void_rail' || weapon.id === 'crimson_reaper'
             ? 10
             : weapon.id === 'cryo_shatter'
             ? 9
             : weapon.id === 'plasma_scythe'
             ? 9
+            : weapon.id === 'ricochet_disc'
+            ? 8
             : weapon.id === 'chrono_thunder'
             ? 8
             : weapon.id === 'aegis_titan'
             ? 8
             : weapon.id === 'hyperion_astral'
             ? 10
-            : weapon.id === 'missile'
+            : weapon.id === 'missile' || weapon.id === 'quantum_swarm'
             ? 7
-            : weapon.id === 'prism_splitter'
+            : weapon.id === 'prism_splitter' || weapon.id === 'pulsar_matrix'
             ? 6
             : weapon.id === 'beam'
             ? 6
@@ -5254,20 +5272,34 @@ export class GameEngine {
         weaponType: weapon.id,
         damageCategory: mapWeaponToDamageCategory(weapon.id, Boolean(weapon.explosionRadius)),
         ownerSlot: 'p1',
-        bouncesRemaining: augMods.ricochetBounces,
+        bouncesRemaining: (weapon.id === 'ricochet_disc' ? 2 : 0) + augMods.ricochetBounces,
       });
     }
 
     // Play sound according to weapon
-    if (weapon.id === 'pulse') soundEngine.playPulseShoot();
-    else if (weapon.id === 'scatter' || weapon.id === 'plasma_scythe' || weapon.id === 'prism_splitter') soundEngine.playScatterShoot();
-    else if (weapon.id === 'beam' || weapon.id === 'void_rail') soundEngine.playBeamShoot();
-    else if (weapon.id === 'missile') soundEngine.playScatterShoot();
+    if (weapon.id === 'pulse' || weapon.id === 'pulsar_matrix') soundEngine.playPulseShoot();
+    else if (
+      weapon.id === 'scatter' ||
+      weapon.id === 'plasma_scythe' ||
+      weapon.id === 'crimson_reaper' ||
+      weapon.id === 'prism_splitter' ||
+      weapon.id === 'ricochet_disc'
+    )
+      soundEngine.playScatterShoot();
+    else if (weapon.id === 'beam' || weapon.id === 'void_rail' || weapon.id === 'astral_horizon')
+      soundEngine.playBeamShoot();
+    else if (weapon.id === 'missile' || weapon.id === 'quantum_swarm') soundEngine.playScatterShoot();
     else if (weapon.id === 'leviathan' || weapon.id === 'cryo_shatter') soundEngine.playBeamShoot();
     else if (weapon.id === 'vortex') soundEngine.playBeamShoot();
     else if (weapon.id === 'inferno') soundEngine.playPulseShoot();
     else if (weapon.id === 'chrono_thunder') soundEngine.playPulseShoot();
-    else if (weapon.id === 'supernova' || weapon.id === 'omega_singularity' || weapon.id === 'celestial_eclipse') soundEngine.playBeamShoot();
+    else if (
+      weapon.id === 'supernova' ||
+      weapon.id === 'omega_singularity' ||
+      weapon.id === 'celestial_eclipse' ||
+      weapon.id === 'genesis_nova'
+    )
+      soundEngine.playBeamShoot();
     else if (weapon.id === 'aegis_titan') soundEngine.playBeamShoot();
     else if (weapon.id === 'hyperion_astral') soundEngine.playBeamShoot();
 
@@ -5679,14 +5711,20 @@ export class GameEngine {
                 this.stats.highestCombo = this.stats.comboCount;
               }
               this.stats.maxCombo = this.stats.highestCombo;
-              const fin = advanceComboFinisherState(
-                this.stats.comboFinisherCharge || 0,
-                Boolean(this.stats.comboFinisherReady),
+              this.finisherChargeProgress += this.cachedStoreGearMods.finisherChargeMultiplier;
+              const finSteps = Math.floor(this.finisherChargeProgress);
+              this.finisherChargeProgress -= finSteps;
+              const prevCharge = this.stats.comboFinisherCharge || 0;
+              const prevReady = Boolean(this.stats.comboFinisherReady);
+              const baseFin = advanceComboFinisherState(
+                Math.min(COMBO_FINISHER_THRESHOLD, prevCharge + Math.max(0, finSteps - 1)),
+                prevReady,
                 this.stats.comboStreak
               );
-              this.stats.comboFinisherCharge = fin.charge;
-              this.stats.comboFinisherReady = fin.ready;
-              if (fin.justBecameReady) {
+              const finJustReady = !prevReady && baseFin.ready;
+              this.stats.comboFinisherCharge = baseFin.charge;
+              this.stats.comboFinisherReady = baseFin.ready;
+              if (finJustReady) {
                 soundEngine.playFinisherReady();
                 this.spawnFloatingText(
                   `⚡ ${COMBO_FINISHER_THRESHOLD}-HIT COMBO FINISHER READY! PRESS [E]`,
@@ -5707,7 +5745,8 @@ export class GameEngine {
                 this.awardMastery(p.weaponType, 'hit');
                 const mTier = getMasteryTierForXp(this.weaponMastery[p.weaponType]?.xp || 0);
                 const modCritBonus = this.cachedStoreGearMods.critChanceBonus;
-                const totalCritChance = Math.min(0.85, (mTier.critChance || 0) + modCritBonus);
+                const boosterCritBonus = this.activeBoosters.includes('vampiric_surge') ? 0.12 : 0;
+                const totalCritChance = Math.min(0.85, (mTier.critChance || 0) + modCritBonus + boosterCritBonus);
                 if (!isCrit && !barrierBypassed && totalCritChance > 0 && Math.random() < totalCritChance) {
                   isCrit = true;
                   p.damage = Math.round(p.damage * 1.75);
@@ -6246,7 +6285,7 @@ export class GameEngine {
     if (
       !canActivateComboFinisher({
         ready: Boolean(this.stats.comboFinisherReady),
-        streak: this.stats.comboStreak,
+        streak: Math.max(this.stats.comboStreak, this.stats.comboFinisherCharge || 0),
         comboTimer: this.stats.comboTimer,
       })
     ) {
@@ -6255,6 +6294,7 @@ export class GameEngine {
 
     this.stats.comboFinisherCharge = 0;
     this.stats.comboFinisherReady = false;
+    this.finisherChargeProgress = 0;
     this.stats.comboTimer = Math.max(this.stats.comboTimer, 2.5);
 
     this.addCameraTrauma(COMBO_FINISHER_TRAUMA);
@@ -7081,14 +7121,20 @@ export class GameEngine {
     }
     this.stats.maxCombo = this.stats.highestCombo;
     if (!this.isResolvingFinisher) {
-      const fin = advanceComboFinisherState(
-        this.stats.comboFinisherCharge || 0,
-        Boolean(this.stats.comboFinisherReady),
+      this.finisherChargeProgress += this.cachedStoreGearMods.finisherChargeMultiplier;
+      const finSteps = Math.floor(this.finisherChargeProgress);
+      this.finisherChargeProgress -= finSteps;
+      const prevCharge = this.stats.comboFinisherCharge || 0;
+      const prevReady = Boolean(this.stats.comboFinisherReady);
+      const baseFin = advanceComboFinisherState(
+        Math.min(COMBO_FINISHER_THRESHOLD, prevCharge + Math.max(0, finSteps - 1)),
+        prevReady,
         this.stats.comboStreak
       );
-      this.stats.comboFinisherCharge = fin.charge;
-      this.stats.comboFinisherReady = fin.ready;
-      if (fin.justBecameReady) {
+      const finJustReady = !prevReady && baseFin.ready;
+      this.stats.comboFinisherCharge = baseFin.charge;
+      this.stats.comboFinisherReady = baseFin.ready;
+      if (finJustReady) {
         soundEngine.playFinisherReady();
         this.spawnFloatingText(
           `⚡ ${COMBO_FINISHER_THRESHOLD}-HIT COMBO FINISHER READY! PRESS [E]`,
@@ -8602,6 +8648,13 @@ export class GameEngine {
       ctx.fillStyle =
         hpRatio > 0.5 ? '#22d3ee' : hpRatio > 0.25 ? '#fbbf24' : '#fb7185';
       ctx.fillRect(bx + 1, by + 1, Math.max(0, (barW - 2) * hpRatio), barH - 2);
+      if (wall.maxTtl > 0) {
+        const ttlRatio = Math.max(0, Math.min(1, wall.ttl / wall.maxTtl));
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.fillRect(bx, by + barH + 2, barW, 3);
+        ctx.fillStyle = ttlRatio > 0.35 ? '#e879f9' : '#fb7185';
+        ctx.fillRect(bx, by + barH + 2, barW * ttlRatio, 3);
+      }
       ctx.restore();
     }
   }
@@ -9888,6 +9941,110 @@ export class GameEngine {
       ctx.beginPath();
       ctx.arc(0, 0, r * 0.58, 0, Math.PI * 2);
       ctx.stroke();
+    } else if (this.activeCraft === 'mirage_viper') {
+      // Twin-lance desert mirage interceptor
+      ctx.fillStyle = neonSkin ? neonSkin.hullFill : '#1f1407';
+      ctx.strokeStyle = neonSkin ? neonSkin.primaryNeon : '#f59e0b';
+      ctx.lineWidth = neonSkin ? 3 : 2.4;
+      ctx.beginPath();
+      ctx.moveTo(r * 1.7, 0);
+      ctx.lineTo(r * 0.4, -r * 0.38);
+      ctx.lineTo(r * 0.85, -r * 0.92);
+      ctx.lineTo(-r * 0.9, -r * 1.05);
+      ctx.lineTo(-r * 0.45, -r * 0.25);
+      ctx.lineTo(-r * 0.7, 0);
+      ctx.lineTo(-r * 0.45, r * 0.25);
+      ctx.lineTo(-r * 0.9, r * 1.05);
+      ctx.lineTo(r * 0.85, r * 0.92);
+      ctx.lineTo(r * 0.4, r * 0.38);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    } else if (this.activeCraft === 'colossus_bastion') {
+      // Heavy armored hexagonal bastion cruiser
+      ctx.fillStyle = neonSkin ? neonSkin.hullFill : '#091829';
+      ctx.strokeStyle = neonSkin ? neonSkin.primaryNeon : '#38bdf8';
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(r * 1.35, -r * 0.45);
+      ctx.lineTo(r * 1.35, r * 0.45);
+      ctx.lineTo(r * 0.45, r * 1.3);
+      ctx.lineTo(-r * 0.85, r * 1.2);
+      ctx.lineTo(-r * 1.05, 0);
+      ctx.lineTo(-r * 0.85, -r * 1.2);
+      ctx.lineTo(r * 0.45, -r * 1.3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = neonSkin ? neonSkin.secondaryNeon : '#fbbf24';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-r * 0.55, -r * 0.8, r * 0.35, r * 1.6);
+    } else if (this.activeCraft === 'frost_valkyrie') {
+      // Crystalline glacial overclock raider
+      ctx.fillStyle = neonSkin ? neonSkin.hullFill : '#081f29';
+      ctx.strokeStyle = neonSkin ? neonSkin.primaryNeon : '#67e8f9';
+      ctx.lineWidth = neonSkin ? 3 : 2.5;
+      ctx.beginPath();
+      ctx.moveTo(r * 1.6, 0);
+      ctx.lineTo(r * 0.35, -r * 0.48);
+      ctx.lineTo(-r * 0.25, -r * 1.35);
+      ctx.lineTo(-r * 0.9, -r * 0.65);
+      ctx.lineTo(-r * 0.45, 0);
+      ctx.lineTo(-r * 0.9, r * 0.65);
+      ctx.lineTo(-r * 0.25, r * 1.35);
+      ctx.lineTo(r * 0.35, r * 0.48);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    } else if (this.activeCraft === 'eclipse_phantom') {
+      // Stealth orchid delta apex fighter
+      ctx.fillStyle = neonSkin ? neonSkin.hullFill : '#1d0924';
+      ctx.strokeStyle = neonSkin ? neonSkin.primaryNeon : '#e879f9';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(r * 1.72, 0);
+      ctx.lineTo(-r * 0.15, -r * 1.35);
+      ctx.lineTo(-r * 0.95, -r * 0.9);
+      ctx.lineTo(-r * 0.38, -r * 0.28);
+      ctx.lineTo(-r * 0.78, 0);
+      ctx.lineTo(-r * 0.38, r * 0.28);
+      ctx.lineTo(-r * 0.95, r * 0.9);
+      ctx.lineTo(-r * 0.15, r * 1.35);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = neonSkin ? neonSkin.secondaryNeon : '#facc15';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.46, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (this.activeCraft === 'kronos_sovereign') {
+      // Mythic Solar-Gold Vault Warship with chrono-ring & twin crown spears
+      ctx.fillStyle = neonSkin ? neonSkin.hullFill : '#1c1505';
+      ctx.strokeStyle = neonSkin ? neonSkin.primaryNeon : '#fde047';
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(r * 1.8, 0);
+      ctx.lineTo(r * 0.55, -r * 0.5);
+      ctx.lineTo(r * 0.15, -r * 1.48);
+      ctx.lineTo(-r * 0.85, -r * 1.2);
+      ctx.lineTo(-r * 0.52, -r * 0.35);
+      ctx.lineTo(-r * 1.0, 0);
+      ctx.lineTo(-r * 0.52, r * 0.35);
+      ctx.lineTo(-r * 0.85, r * 1.2);
+      ctx.lineTo(r * 0.15, r * 1.48);
+      ctx.lineTo(r * 0.55, r * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = neonSkin ? neonSkin.secondaryNeon : '#22d3ee';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.75, 0, Math.PI * 2);
+      ctx.stroke();
     } else {
       // Vanguard Alpha (Default sleek delta fighter)
       ctx.fillStyle = neonSkin ? neonSkin.hullFill : '#0b1626';
@@ -10095,8 +10252,8 @@ export class GameEngine {
         ctx.stroke();
       }
 
-      // Custom silhouette for Crescent Plasma Scythe & Cryo Shards
-      if (p.weaponType === 'plasma_scythe') {
+      // Custom silhouette for Crescent Plasma Scythes, Ricochet Sawblades, Cryo Shards & Apex Rails
+      if (p.weaponType === 'plasma_scythe' || p.weaponType === 'crimson_reaper') {
         const ang = Math.atan2(p.vy, p.vx);
         ctx.save();
         ctx.translate(p.x, p.y);
@@ -10112,22 +10269,63 @@ export class GameEngine {
         ctx.arc(-4, 0, p.radius * 1.35, -Math.PI * 0.32, Math.PI * 0.32);
         ctx.stroke();
         ctx.restore();
-      } else if (p.weaponType === 'cryo_shatter') {
+      } else if (p.weaponType === 'ricochet_disc') {
+        const spin = ((this.frameNowMs || performance.now()) * 0.018 + p.id) % (Math.PI * 2);
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(spin);
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.arc(0, 0, p.radius * 1.15, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        for (let b = 0; b < 4; b++) {
+          const a = (b * Math.PI) / 2;
+          ctx.moveTo(Math.cos(a) * p.radius * 0.4, Math.sin(a) * p.radius * 0.4);
+          ctx.lineTo(Math.cos(a) * p.radius * 1.45, Math.sin(a) * p.radius * 1.45);
+        }
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, p.radius * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (p.weaponType === 'cryo_shatter' || p.weaponType === 'astral_horizon') {
         const ang = Math.atan2(p.vy, p.vx);
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(ang);
         ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.moveTo(p.radius * 1.8, 0);
-        ctx.lineTo(-p.radius * 0.8, -p.radius * 0.75);
+        ctx.moveTo(p.radius * 1.85, 0);
+        ctx.lineTo(-p.radius * 0.85, -p.radius * 0.72);
         ctx.lineTo(-p.radius * 0.3, 0);
-        ctx.lineTo(-p.radius * 0.8, p.radius * 0.75);
+        ctx.lineTo(-p.radius * 0.85, p.radius * 0.72);
         ctx.closePath();
         ctx.fill();
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(p.radius * 0.25, 0, p.radius * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (p.weaponType === 'genesis_nova') {
+        const pulseSpin = ((this.frameNowMs || performance.now()) * 0.008 + p.id) % (Math.PI * 2);
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(pulseSpin);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, p.radius * 0.85, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fde047';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, p.radius * 1.2, 0, Math.PI * 1.4);
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, p.radius * 0.42, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       } else {

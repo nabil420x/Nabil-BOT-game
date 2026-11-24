@@ -38,6 +38,7 @@ import {
   type ArenaMapTheme,
 } from './src/game/arenaObstacles.ts';
 import {
+  TACTICAL_WALL_DURATION_SECONDS,
   TACTICAL_WALL_MAX_ACTIVE_PER_PLAYER,
   TACTICAL_WALL_MAX_HP,
   applyDamageToTacticalWall,
@@ -95,6 +96,7 @@ interface DuelRoom {
   spectators: Map<string, DuelSpectatorClient>;
   activeSpawns: Map<string, DuelCompetitiveSpawn>;
   tacticalWalls: Map<string, DuelTacticalWall>;
+  wallTimers: Map<string, NodeJS.Timeout>;
   wallSeq: number;
   wallLastDeployBySlot: Map<DuelSlotId, number>;
   claimedKills: Set<string>;
@@ -192,6 +194,10 @@ function clearRoomTimers(room: DuelRoom) {
     clearInterval(room.spawnInterval);
     room.spawnInterval = null;
   }
+  for (const timer of room.wallTimers.values()) {
+    clearTimeout(timer);
+  }
+  room.wallTimers.clear();
 }
 
 function spawnBalancedWaveForRoom(room: DuelRoom) {
@@ -296,6 +302,10 @@ function startDuelRoomMatch(room: DuelRoom) {
   room.claimedKills.clear();
   room.activeSpawns.clear();
   room.tacticalWalls.clear();
+  for (const timer of room.wallTimers.values()) {
+    clearTimeout(timer);
+  }
+  room.wallTimers.clear();
   room.wallSeq = 0;
   room.wallLastDeployBySlot.clear();
   room.killFeed = [];
@@ -343,19 +353,7 @@ function startDuelRoomMatch(room: DuelRoom) {
     for (const p of room.players.values()) {
       p.momentumTimer = stepCyberMomentumTimer(p.momentumTimer, 1);
     }
-    // Step finite-TTL walls if configured; persistent walls (maxTtl <= 0) remain until destroyed
-    for (const [wallId, wall] of room.tacticalWalls.entries()) {
-      if (wall.maxTtl > 0) {
-        wall.ttl -= 1;
-        if (wall.ttl <= 0) {
-          room.tacticalWalls.delete(wallId);
-          broadcastToRoom(room, {
-            type: 'duel:wall_destroyed',
-            wallId,
-          });
-        }
-      }
-    }
+    // Wall expiry is handled by per-wall millisecond timers for exact 3.0s timing
     syncRoomLegacyP1P2(room);
 
     broadcastToRoom(room, {
@@ -574,6 +572,7 @@ async function bootstrap() {
           spectators: new Map(),
           activeSpawns: new Map(),
           tacticalWalls: new Map(),
+          wallTimers: new Map(),
           wallSeq: 0,
           wallLastDeployBySlot: new Map(),
           claimedKills: new Set(),
@@ -902,6 +901,11 @@ async function bootstrap() {
         while (ownedIds.length >= TACTICAL_WALL_MAX_ACTIVE_PER_PLAYER) {
           const evictId = ownedIds.shift();
           if (evictId) {
+            const oldTimer = room.wallTimers.get(evictId);
+            if (oldTimer) {
+              clearTimeout(oldTimer);
+              room.wallTimers.delete(evictId);
+            }
             room.tacticalWalls.delete(evictId);
             broadcastToRoom(room, {
               type: 'duel:wall_destroyed',
@@ -921,8 +925,22 @@ async function bootstrap() {
           angle: Number(rawAngle.toFixed(4)),
           hp: TACTICAL_WALL_MAX_HP,
           maxHp: TACTICAL_WALL_MAX_HP,
+          ttl: TACTICAL_WALL_DURATION_SECONDS,
         });
         room.tacticalWalls.set(wallId, wall);
+        if (TACTICAL_WALL_DURATION_SECONDS > 0) {
+          const expireTimer = setTimeout(() => {
+            room.wallTimers.delete(wallId);
+            if (room.tacticalWalls.has(wallId)) {
+              room.tacticalWalls.delete(wallId);
+              broadcastToRoom(room, {
+                type: 'duel:wall_destroyed',
+                wallId,
+              });
+            }
+          }, Math.round(TACTICAL_WALL_DURATION_SECONDS * 1000));
+          room.wallTimers.set(wallId, expireTimer);
+        }
         broadcastToRoom(room, {
           type: 'duel:wall_deployed',
           wall,
@@ -949,6 +967,11 @@ async function bootstrap() {
         const dmg = Math.max(1, Math.min(250, Number(msg.damage) || 20));
         const res = applyDamageToTacticalWall(wall, dmg);
         if (res.destroyed) {
+          const existingTimer = room.wallTimers.get(wallId);
+          if (existingTimer) {
+            clearTimeout(existingTimer);
+            room.wallTimers.delete(wallId);
+          }
           room.tacticalWalls.delete(wallId);
           broadcastToRoom(room, {
             type: 'duel:wall_destroyed',

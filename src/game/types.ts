@@ -31,7 +31,13 @@ export type WeaponType =
   | 'omega_singularity'
   | 'prism_splitter'
   | 'void_rail'
-  | 'celestial_eclipse';
+  | 'celestial_eclipse'
+  | 'ricochet_disc'
+  | 'pulsar_matrix'
+  | 'quantum_swarm'
+  | 'crimson_reaper'
+  | 'astral_horizon'
+  | 'genesis_nova';
 
 export type WeaponTier = 'starter' | 'advanced' | 'monster' | 'heavy' | 'godtier';
 
@@ -73,7 +79,12 @@ export type CraftId =
   | 'astral_valkyrie'
   | 'zenith_emperor'
   | 'tempest_raptor'
-  | 'seraph_nova';
+  | 'seraph_nova'
+  | 'mirage_viper'
+  | 'colossus_bastion'
+  | 'frost_valkyrie'
+  | 'eclipse_phantom'
+  | 'kronos_sovereign';
 
 export type CraftTier = 'starter' | 'interceptor' | 'heavy' | 'solar' | 'godtier';
 
@@ -755,7 +766,9 @@ export type PreRunBoosterId =
   | 'coin_rush'
   | 'headstart_augment'
   | 'finisher_charged'
-  | 'bounty_radar_vip';
+  | 'bounty_radar_vip'
+  | 'turbo_thrusters'
+  | 'vampiric_surge';
 
 export interface PreRunBoosterDef {
   id: PreRunBoosterId;
@@ -829,7 +842,11 @@ export type CompanionDroneId =
   | 'nova_harvester'
   | 'inferno_wyrm'
   | 'archon_seraph'
-  | 'void_reaper_drone';
+  | 'void_reaper_drone'
+  | 'prism_weaver'
+  | 'medic_nanobot'
+  | 'plasma_hydra_bot'
+  | 'celestial_phoenix_bot';
 
 export interface CompanionDroneDef {
   id: CompanionDroneId;
@@ -844,6 +861,7 @@ export interface CompanionDroneDef {
   fireIntervalSec: number;
   boltDamage: number;
   pierce: number;
+  isHoming?: boolean;
   explosionRadius?: number;
   cryoSlowSec?: number;
   shieldPerCycle?: number;
@@ -863,7 +881,11 @@ export type ThrusterTrailId =
   | 'trail_arctic_aurora'
   | 'trail_void_lightning'
   | 'trail_celestial_gold'
-  | 'trail_quantum_prism';
+  | 'trail_quantum_prism'
+  | 'trail_neon_magenta'
+  | 'trail_toxic_acid'
+  | 'trail_supernova_pulse'
+  | 'trail_galactic_halo';
 
 export interface ThrusterTrailDef {
   id: ThrusterTrailId;
@@ -888,7 +910,11 @@ export type PermanentModuleId =
   | 'thermal_vent'
   | 'vampiric_siphon'
   | 'crit_amplifier'
-  | 'shield_capacitor';
+  | 'shield_capacitor'
+  | 'thruster_turbo'
+  | 'salvage_core'
+  | 'hyper_barrel'
+  | 'finisher_dynamo';
 
 export interface PermanentModuleDef {
   id: PermanentModuleId;
@@ -913,6 +939,7 @@ export interface StoreBundleDef {
   color: string;
   icon: string;
   unlockWeapons?: WeaponType[];
+  unlockCrafts?: CraftId[];
   unlockCompanions?: CompanionDroneId[];
   unlockTrails?: ThrusterTrailId[];
   unlockModules?: PermanentModuleId[];

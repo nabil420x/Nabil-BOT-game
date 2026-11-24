@@ -24,10 +24,26 @@ export default defineConfig(() => {
           cleanupOutdatedCaches: true,
           skipWaiting: true,
           clientsClaim: true,
+          navigateFallback: null,
           navigateFallbackDenylist: [/^\/api\//],
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          globPatterns: ['**/*.{js,css,ico,png,svg,woff,woff2}'],
           globIgnores: ['assets/aistudio/**'],
           runtimeCaching: [
+            {
+              urlPattern: ({ request }) => request.mode === 'navigate',
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'app-html-navigation-cache',
+                networkTimeoutSeconds: 3,
+                expiration: {
+                  maxEntries: 8,
+                  maxAgeSeconds: 60 * 60 * 24,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
             {
               urlPattern: /\/assets\/images\/.*\.jpg$/i,
               handler: 'CacheFirst',

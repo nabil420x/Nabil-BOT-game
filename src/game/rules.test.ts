@@ -155,6 +155,11 @@ function createMockPlayerStats(overrides: Partial<PlayerStats> = {}): PlayerStat
       zenith_emperor: false,
       tempest_raptor: false,
       seraph_nova: false,
+      mirage_viper: false,
+      colossus_bastion: false,
+      frost_valkyrie: false,
+      eclipse_phantom: false,
+      kronos_sovereign: false,
     },
     unlockedWeapons: {
       pulse: true,
@@ -174,6 +179,12 @@ function createMockPlayerStats(overrides: Partial<PlayerStats> = {}): PlayerStat
       prism_splitter: false,
       void_rail: false,
       celestial_eclipse: false,
+      ricochet_disc: false,
+      pulsar_matrix: false,
+      quantum_swarm: false,
+      crimson_reaper: false,
+      astral_horizon: false,
+      genesis_nova: false,
     },
     level: 1,
     levelKills: 0,
@@ -346,6 +357,12 @@ test('purchaseWeapon unlocks weapons when player has sufficient coins and deduct
     prism_splitter: false,
     void_rail: false,
     celestial_eclipse: false,
+    ricochet_disc: false,
+    pulsar_matrix: false,
+    quantum_swarm: false,
+    crimson_reaper: false,
+    astral_horizon: false,
+    genesis_nova: false,
   };
 
   const scatterCost = getWeaponPrice('scatter'); // 600 coins
@@ -886,6 +903,12 @@ test('Hydra and Inferno weapons are exclusive to Diamond Vault with premium diam
     prism_splitter: false,
     void_rail: false,
     celestial_eclipse: false,
+    ricochet_disc: false,
+    pulsar_matrix: false,
+    quantum_swarm: false,
+    crimson_reaper: false,
+    astral_horizon: false,
+    genesis_nova: false,
   };
 
   // Coin store must reject buying Diamond Vault weapons even with plenty of coins

@@ -66,6 +66,22 @@ export const PRE_RUN_BOOSTERS: Record<PreRunBoosterId, PreRunBoosterDef> = {
     color: '#facc15',
     icon: '🎯',
   },
+  turbo_thrusters: {
+    id: 'turbo_thrusters',
+    name: 'Turbo Afterburn Injector',
+    shortLabel: '+15% SPD',
+    description: 'Boosts flight velocity +15% and cuts Dash Cooldown by 20% for the entire next run.',
+    color: '#2dd4bf',
+    icon: '🚀',
+  },
+  vampiric_surge: {
+    id: 'vampiric_surge',
+    name: 'Siphon & Crit Nanogel',
+    shortLabel: '+12% CRIT',
+    description: 'Adds +10 Shield/s passive regen and +12% Critical Hit Chance for your next run.',
+    color: '#f43f5e',
+    icon: '🩸',
+  },
 };
 
 export function getSupplyDayKey(nowMs: number = Date.now()): string {

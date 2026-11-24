@@ -183,6 +183,57 @@ export const CraftNeonPreviewSvg: React.FC<{
             />
             <circle cx="0" cy="0" r="13" fill="none" stroke={accent} strokeWidth="2" />
           </>
+        ) : craftId === 'mirage_viper' ? (
+          <>
+            <polygon
+              points="39,0 12,-7 -4,-29 -18,-14 -8,0 -18,14 -4,29 12,7"
+              fill={fill}
+              stroke={stroke}
+              strokeWidth="3"
+            />
+            <line x1="22" y1="-3" x2="-4" y2="-20" stroke={accent} strokeWidth="2" />
+            <line x1="22" y1="3" x2="-4" y2="20" stroke={accent} strokeWidth="2" />
+          </>
+        ) : craftId === 'colossus_bastion' ? (
+          <>
+            <polygon
+              points="30,-11 30,11 10,28 -20,25 -14,0 -20,-25 10,-28"
+              fill={fill}
+              stroke={stroke}
+              strokeWidth="3"
+            />
+            <rect x="-12" y="-17" width="8" height="34" fill={accent} fillOpacity="0.85" />
+          </>
+        ) : craftId === 'frost_valkyrie' ? (
+          <>
+            <polygon
+              points="37,0 10,-11 -2,-30 -16,-16 -9,0 -16,16 -2,30 10,11"
+              fill={fill}
+              stroke={stroke}
+              strokeWidth="3"
+            />
+            <polygon points="8,-12 24,0 8,12" fill="none" stroke={accent} strokeWidth="1.8" />
+          </>
+        ) : craftId === 'eclipse_phantom' ? (
+          <>
+            <path
+              d="M 38 0 L 10 -12 Q -8 -34 -22 -24 L -10 -7 L -18 0 L -10 7 L -22 24 Q -8 34 10 12 Z"
+              fill={fill}
+              stroke={stroke}
+              strokeWidth="3"
+            />
+            <circle cx="0" cy="0" r="11" fill="none" stroke={accent} strokeWidth="1.8" />
+          </>
+        ) : craftId === 'kronos_sovereign' ? (
+          <>
+            <polygon
+              points="40,0 16,-11 2,-34 -16,-22 -9,0 -16,22 2,34 16,11"
+              fill={fill}
+              stroke={stroke}
+              strokeWidth="3"
+            />
+            <circle cx="0" cy="0" r="15" fill="none" stroke={accent} strokeWidth="2" strokeDasharray="5 3" />
+          </>
         ) : (
           <>
             <polygon points="32,0 -20,-21 -9,0 -20,21" fill={fill} stroke={stroke} strokeWidth="3" />

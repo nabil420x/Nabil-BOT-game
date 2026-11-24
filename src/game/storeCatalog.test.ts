@@ -35,14 +35,14 @@ import { getWeaponPrice, purchaseWeapon } from './rules';
 import { SUPPLY_CRATE_COSTS } from './supplyCrate';
 import { DIAMOND_RELIC_COSTS } from './diamonds';
 
-test('store expansion exposes 17 weapons, 11 crafts, 9 companions, 9 trails, 6 modules, 6 boosters, and 5 bundles with raised pricing', () => {
-  assert.equal(WEAPON_ORDER.length, 17);
-  assert.equal(CRAFT_ORDER.length, 11);
-  assert.equal(COMPANION_ORDER.length, 9);
-  assert.equal(TRAIL_ORDER.length, 9);
-  assert.equal(MODULE_ORDER.length, 6);
-  assert.equal(BOOSTER_ORDER.length, 6);
-  assert.equal(STORE_BUNDLES.length, 5);
+test('store expansion exposes 23 weapons, 16 crafts, 13 companions, 13 trails, 10 modules, 8 boosters, and 8 bundles with balanced pricing', () => {
+  assert.equal(WEAPON_ORDER.length, 23);
+  assert.equal(CRAFT_ORDER.length, 16);
+  assert.equal(COMPANION_ORDER.length, 13);
+  assert.equal(TRAIL_ORDER.length, 13);
+  assert.equal(MODULE_ORDER.length, 10);
+  assert.equal(BOOSTER_ORDER.length, 8);
+  assert.equal(STORE_BUNDLES.length, 8);
 
   assert.equal(WEAPONS.plasma_scythe.price, 2000);
   assert.equal(WEAPONS.plasma_scythe.diamondCost, 80);
@@ -52,8 +52,16 @@ test('store expansion exposes 17 weapons, 11 crafts, 9 companions, 9 trails, 6 m
   assert.equal(WEAPONS.prism_splitter.price, 2800);
   assert.equal(WEAPONS.void_rail.price, 5500);
   assert.equal(WEAPONS.celestial_eclipse.diamondCost, 330);
+  assert.equal(WEAPONS.ricochet_disc.price, 1650);
+  assert.equal(WEAPONS.pulsar_matrix.price, 2350);
+  assert.equal(WEAPONS.quantum_swarm.isHoming, true);
+  assert.equal(WEAPONS.crimson_reaper.price, 4400);
+  assert.equal(WEAPONS.astral_horizon.price, 11200);
+  assert.equal(WEAPONS.genesis_nova.diamondCost, 400);
+  assert.equal(WEAPONS.genesis_nova.price, 0);
   assert.equal(getWeaponPrice('omega_singularity'), 9500);
   assert.equal(getWeaponPrice('void_rail'), 5500);
+  assert.equal(getWeaponPrice('astral_horizon'), 11200);
 
   assert.equal(CRAFTS.cyber_falcon.price, 1400);
   assert.equal(CRAFTS.cyber_falcon.diamondCost, 60);
@@ -61,11 +69,23 @@ test('store expansion exposes 17 weapons, 11 crafts, 9 companions, 9 trails, 6 m
   assert.equal(CRAFTS.tempest_raptor.price, 3800);
   assert.equal(CRAFTS.zenith_emperor.diamondCost, 320);
   assert.equal(CRAFTS.seraph_nova.diamondCost, 380);
+  assert.equal(CRAFTS.mirage_viper.price, 2450);
+  assert.equal(CRAFTS.colossus_bastion.price, 4600);
+  assert.equal(CRAFTS.frost_valkyrie.price, 5400);
+  assert.equal(CRAFTS.eclipse_phantom.price, 9600);
+  assert.equal(CRAFTS.kronos_sovereign.diamondCost, 420);
+  assert.equal(CRAFTS.kronos_sovereign.price, 0);
+
+  assert.equal(COMPANION_DRONES.celestial_phoenix_bot.isHoming, true);
+  assert.equal(COMPANION_DRONES.plasma_hydra_bot.isHoming, true);
+  assert.equal(THRUSTER_TRAILS.trail_galactic_halo.diamondCost, 210);
 
   assert.equal(SUPPLY_CRATE_COSTS.standard, 650);
   assert.equal(SUPPLY_CRATE_COSTS.apex, 1650);
   assert.equal(DIAMOND_RELIC_COSTS.chrono_flux, 165);
   assert.equal(DIAMOND_RELIC_COSTS.void_overdrive, 225);
+  assert.equal(DIAMOND_RELIC_COSTS.astral_bastion, 260);
+  assert.equal(DIAMOND_RELIC_COSTS.phoenix_dynamo, 290);
 
   // Every non-free store item has a positive diamondCost
   for (const wId of WEAPON_ORDER) {
@@ -326,5 +346,58 @@ test('all Store categories support buying with Diamonds alongside Coins', () => 
   assert.equal(bundleOk.updatedGearState.purchasedBundles.bundle_starter_kit, true);
   assert.equal(bundleOk.updatedGearState.unlockedCompanions.scout_spark, true);
   assert.deepEqual(bundleOk.unlockedWeaponsList, ['scatter']);
+  assert.deepEqual(bundleOk.unlockedCraftsList, []);
+
+  // Cyber Ace bundle unlocks craft + weapon + trail
+  const aceRes = purchaseStoreBundle('bundle_cyber_ace', {
+    currentCoins: 4200,
+    activeWeapon: 'pulse',
+    gearState: bundleOk.updatedGearState,
+    currency: 'coins',
+  });
+  assert.equal(aceRes.success, true);
+  assert.equal(aceRes.remainingCoins, 300);
+  assert.deepEqual(aceRes.unlockedCraftsList, ['mirage_viper']);
+  assert.deepEqual(aceRes.unlockedWeaponsList, ['ricochet_disc']);
+  assert.equal(aceRes.updatedGearState.unlockedTrails.trail_neon_magenta, true);
+
+  // Eternal Sovereign Vault chest unlocks Kronos craft + Phoenix companion + Galactic trail + 5000 coins
+  const eternalRes = purchaseStoreBundle('bundle_eternal_sovereign', {
+    currentCoins: 300,
+    activeWeapon: 'pulse',
+    gearState: aceRes.updatedGearState,
+    currency: 'diamonds',
+    currentDiamonds: 600,
+  });
+  assert.equal(eternalRes.success, true);
+  assert.equal(eternalRes.remainingDiamonds, 105);
+  assert.equal(eternalRes.remainingCoins, 5300);
+  assert.deepEqual(eternalRes.unlockedCraftsList, ['kronos_sovereign']);
+  assert.equal(eternalRes.updatedGearState.unlockedCompanions.celestial_phoenix_bot, true);
+  assert.equal(eternalRes.updatedGearState.unlockedTrails.trail_galactic_halo, true);
+
+  // New modules + new diamond relics stack into computeStoreGearModifiers cleanly
+  let modState = eternalRes.updatedGearState;
+  modState = purchaseModuleState(modState, 10000, 'thruster_turbo').updatedState;
+  modState = purchaseModuleState(modState, 10000, 'salvage_core').updatedState;
+  modState = purchaseModuleState(modState, 10000, 'hyper_barrel').updatedState;
+  modState = purchaseModuleState(modState, 10000, 'finisher_dynamo').updatedState;
+  const stackedMods = computeStoreGearModifiers(modState, {
+    astral_bastion: true,
+    phoenix_dynamo: true,
+  });
+  assert.equal(stackedMods.maxHpBonus, 3);
+  assert.equal(stackedMods.maxShieldBonus, 50);
+  assert.ok(stackedMods.damageMultiplier >= 1.12);
+  assert.ok(stackedMods.critChanceBonus >= 0.12);
+  assert.ok(stackedMods.finisherChargeMultiplier >= 1.35);
+
+  // New boosters purchase cleanly
+  const turboRes = purchaseBoosterWithDiamondsState([], 'turbo_thrusters', 30);
+  assert.equal(turboRes.success, true);
+  assert.deepEqual(turboRes.armedBoosters, ['turbo_thrusters']);
+  const vampRes = purchaseBoosterWithDiamondsState(turboRes.armedBoosters, 'vampiric_surge', 40);
+  assert.equal(vampRes.success, true);
+  assert.deepEqual(vampRes.armedBoosters, ['turbo_thrusters', 'vampiric_surge']);
 });
 
